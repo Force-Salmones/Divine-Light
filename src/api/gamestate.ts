@@ -1,5 +1,5 @@
 export type GameState = {
-    players: Player[];
+    player: Player;
     enemies: Enemy[];
     selectedEnemyId: number | null;
     lastAttackResult?: {
@@ -43,15 +43,15 @@ export type Player = {
 }
 
 export type Enemy = {
-    //mobId is the type of enemy defined in ../db/mobs.json
-    //the mobId of the enemy is also the filename of the sprite for the enemy in ../assets/mobs/
+    id: number;
+    // mobId is the enemy type defined in ../db/mobs.json
+    // the mobId is also the filename of the sprite for the enemy in ../assets/mobs/
     mobId: number;
     name: string;
     level: number;
     experience: number;
     gold: number;
-    maxHealth: number;
-    currHealth: number;
+    health: number;
     damage: number;
     damageType: "physical" | "magical" | "true";
     attackSpeed: number;
@@ -60,15 +60,42 @@ export type Enemy = {
     resistance: number;
     speed: number;
     reSpawnTime: number;
-    aggressive: true;
-    retreats: false;
+    aggressive: boolean;
+    retreats: boolean;
     drops: {};
-    posX: number;
-    posY: number;
+    x: number;
+    y: number;
+    sprite: string;
 }
 
 export let gameState: GameState = {
-    players: [],
+    player: {
+        id: "",
+        name: "",
+        level: 1,
+        experience: 0,
+        gold: 0,
+        STR: 0,
+        VIT: 0,
+        DEX: 0,
+        LUK: 0,
+        INT: 0,
+        WIS: 0,
+        maxHealth: 0,
+        currHealth: 0,
+        maxMana: 0,
+        currMana: 0,
+        defense: 0,
+        resistance: 0,
+        x: 0,
+        y: 0,
+        sprite: "/assets/player-temp.png",
+        speed: 120,
+        attackRange: 48,
+        attackSpeed: 1,
+        lastAttackTime: 0,
+        inventory: {}
+    },
     enemies: [],
     selectedEnemyId: null
 };

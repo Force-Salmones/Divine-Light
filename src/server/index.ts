@@ -5,6 +5,9 @@ import { handlerMovePlayer } from "../api/handlerMovePlayer";
 import { handlerAttackEnemy } from "../api/handlerAttackEnemy";
 import { updateServerMovement, updateAutomaticAttack } from "./updateServerMovement";
 import { gameState } from "../api/gamestate";
+import { loadPlayer } from "../api/loadPlayer";
+import { loadEnemy } from "../api/loadEnemy";
+import { conn } from "../db/index.js";
 import { middlewareLogResponses } from "./middleware";
 import { handlerCreateUser } from "../api/handlerCreateUser";
 
@@ -13,13 +16,41 @@ const app = express();
 const TICK_INTERVAL_MS = 100;
 let lastTick = Date.now();
 
-setInterval(() => {
-    const now = Date.now();
-    const deltaSeconds = (now - lastTick) / 1000;
-    lastTick = now;
-    updateServerMovement(deltaSeconds);
-    updateAutomaticAttack();
-}, TICK_INTERVAL_MS);
+function startTickLoop() {
+    setInterval(() => {
+        const now = Date.now();
+        const deltaSeconds = (now - lastTick) / 1000;
+        lastTick = now;
+        updateServerMovement(deltaSeconds);
+        updateAutomaticAttack();
+    }, TICK_INTERVAL_MS);
+}
+
+async function ensureUserSchema() {
+    await conn`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "unallocated_points" integer DEFAULT 0 NOT NULL;`;
+}
+
+async function initializeGameState() {
+    await ensureUserSchema();
+
+    const player = await loadPlayer("536b2e83-2a1a-4b80-b264-d18be01be7c5");
+    if (!player) {
+        throw new Error("Failed to load the default player from the database");
+    }
+
+    const enemy = await loadEnemy(0);
+    gameState.player = player;
+    gameState.enemies = [enemy];
+    gameState.selectedEnemyId = null;
+}
+
+async function startServer() {
+    await initializeGameState();
+    startTickLoop();
+    app.listen(+config.server_port, () => {
+        console.log(`Server is running on port ${config.server_port}`);
+    });
+}
 
 app.use(middlewareLogResponses);
 app.use(express.json());
@@ -46,6 +77,7 @@ app.use("/home", express.static("./public/home"));
 app.use("/signup", express.static("./public/home/signup"));
 app.use("/assets", express.static("./assets"));
 
-app.listen(+config.server_port, () => {
-    console.log(`Server is running on port ${config.server_port}`);
+void startServer().catch((error) => {
+    console.error("Failed to start server:", error);
+    process.exit(1);
 });

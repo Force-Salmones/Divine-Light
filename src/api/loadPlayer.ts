@@ -27,12 +27,12 @@ export async function loadPlayer(playerId: string): Promise<Player | null> {
         resistance: Math.max(calcResistance(dbUser), 0),
         x: dbUser.posX,
         y: dbUser.posY,
-        sprite: "../../assets/player-temp.png",
+        sprite: "/assets/player-temp.png",
         speed: 100,
         attackRange: 50,
         attackSpeed: 1,
         lastAttackTime: 0,
-        inventory: dbUser.inventory || "{}"
+        inventory: dbUser.inventory ?? { equipment: {}, items: {} }
     };
     return player;
 }
