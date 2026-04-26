@@ -5,6 +5,7 @@ import { handlerMovePlayer } from "../api/handlerMovePlayer";
 import { handlerAttackEnemy } from "../api/handlerAttackEnemy";
 import { updateServerMovement, updateAutomaticAttack } from "./updateServerMovement";
 import { gameState } from "../api/gamestate";
+
 import { loadPlayer } from "../api/loadPlayer";
 import { loadEnemy } from "../api/loadEnemy";
 import { conn } from "../db/index.js";
@@ -26,21 +27,22 @@ function startTickLoop() {
     }, TICK_INTERVAL_MS);
 }
 
-async function ensureUserSchema() {
-    await conn`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "unallocated_points" integer DEFAULT 0 NOT NULL;`;
-}
-
 async function initializeGameState() {
-    await ensureUserSchema();
-
     const player = await loadPlayer("536b2e83-2a1a-4b80-b264-d18be01be7c5");
     if (!player) {
         throw new Error("Failed to load the default player from the database");
     }
 
     const enemy = await loadEnemy(0);
-    gameState.player = player;
+
+    // Initialize multiplayer-aware state
+    gameState.players[player.id] = player;
+    gameState.selfId = player.id; // dev only; single session controls this player
     gameState.enemies = [enemy];
+
+    // Back-compat aliases for current client
+    gameState.player = player;
+    gameState.selectedTargets[player.id] = null;
     gameState.selectedEnemyId = null;
 }
 
@@ -76,6 +78,11 @@ app.use("/app", express.static("./public/app"));
 app.use("/home", express.static("./public/home"));
 app.use("/signup", express.static("./public/home/signup"));
 app.use("/assets", express.static("./assets"));
+
+// For convenience, redirect root to /app (serves index.html)
+app.get("/", (req: Request, res: Response) => {
+    res.redirect(302, "/app/");
+});
 
 void startServer().catch((error) => {
     console.error("Failed to start server:", error);

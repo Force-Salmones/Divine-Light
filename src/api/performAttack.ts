@@ -1,5 +1,4 @@
-import { gameState } from "./gamestate";
-import type { Enemy } from "./gamestate";
+import { gameState, type Enemy, type Player } from "./gamestate";
 
 export interface AttackResult {
     success: boolean;
@@ -9,52 +8,92 @@ export interface AttackResult {
     message?: string;
 }
 
-export function performAttack(enemyId: number): AttackResult | null {
+export function performAttack(playerId: string, enemyId: number): AttackResult | null {
     const enemy = gameState.enemies.find((e: Enemy) => e.id === enemyId);
     if (!enemy) {
         return null;
     }
 
-    const dx = enemy.x - gameState.player.x;
-    const dy = enemy.y - gameState.player.y;
+    const player: Player | undefined = gameState.players[playerId] ?? gameState.player;
+    if (!player) {
+        return null;
+    }
+
+    // Use sprite centers for distance (player 32x32, enemy 24x24)
+    const playerCenterX = player.x + 16;
+    const playerCenterY = player.y + 16;
+    const enemyCenterX = enemy.x + 12;
+    const enemyCenterY = enemy.y + 12;
+    const dx = enemyCenterX - playerCenterX;
+    const dy = enemyCenterY - playerCenterY;
     const distance = Math.hypot(dx, dy);
     
     // Check if in range
-    if (distance > gameState.player.attackRange) {
+    if (distance > player.attackRange) {
         return null;
     }
 
     // Check attack cooldown
     const now = Date.now() / 1000; // Convert to seconds
-    const timeSinceLastAttack = now - gameState.player.lastAttackTime;
-    if (timeSinceLastAttack < gameState.player.attackSpeed) {
+    const timeSinceLastAttack = now - player.lastAttackTime;
+    if (timeSinceLastAttack < player.attackSpeed) {
         return null;
     }
 
     // Update last attack time
-    gameState.player.lastAttackTime = now;
+    player.lastAttackTime = now;
 
-    // Deal damage
+    // Deal damage (placeholder; later incorporate stats)
     const damage = 10;
     const attackX = enemy.x;
     const attackY = enemy.y;
     enemy.health -= damage;
     const enemyDead = enemy.health <= 0;
 
-    // Record attack for client display
-    gameState.lastAttackResult = {
+    // Log event for multiplayer
+    gameState.lastAttackEvents.push({
+        playerId,
         enemyId,
         damage,
         timestamp: Date.now(),
         x: attackX,
         y: attackY,
         enemyDead
-    };
+    });
+
+    // Back-compat for current client: mirror last event for selfId
+    if (gameState.selfId && gameState.selfId === playerId) {
+        gameState.lastAttackResult = {
+            enemyId,
+            damage,
+            timestamp: Date.now(),
+            x: attackX,
+            y: attackY,
+            enemyDead
+        };
+    }
 
     if (enemyDead) {
         gameState.enemies = gameState.enemies.filter((e: Enemy) => e.id !== enemyId);
-        gameState.selectedEnemyId = null; // Deselect if enemy dies
-        //after the refactor, we should call defeatEnemy here with the mobId and player id
+        // Clear selections
+        Object.keys(gameState.selectedTargets).forEach((pid) => {
+            if (gameState.selectedTargets[pid] === enemyId) {
+                gameState.selectedTargets[pid] = null;
+            }
+        });
+        // Back-compat alias
+        if (gameState.selfId && gameState.selectedEnemyId === enemyId) {
+            gameState.selectedEnemyId = null;
+        }
+        // TODO: call defeatEnemy(playerId, enemy.mobId)
+    }
+
+    // Keep alias player reference updated if needed
+    if (gameState.selfId) {
+        const selfPlayer = gameState.players[gameState.selfId];
+        if (selfPlayer) {
+            gameState.player = selfPlayer;
+        }
     }
 
     return {
@@ -62,4 +101,5 @@ export function performAttack(enemyId: number): AttackResult | null {
         enemyId,
         enemyHealth: Math.max(0, enemy.health),
         enemyDead
-    };}
+    };
+}

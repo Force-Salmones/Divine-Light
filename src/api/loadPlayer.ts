@@ -1,4 +1,4 @@
-import type { User } from "@/db/schema";
+import type { User } from "../db/schema";
 import type { Player } from "./gamestate";
 import { getUserByEmail, getUserById } from "../db/queries/users";
 

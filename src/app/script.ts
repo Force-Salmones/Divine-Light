@@ -2,6 +2,26 @@ const canvas = document.getElementById("game") as HTMLCanvasElement;
 const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
 const world = new Image();
 
+// Client-side types (subset mirrored from server for rendering)
+type Player = {
+    id: string;
+    x: number;
+    y: number;
+    sprite: string;
+    speed: number;
+    attackRange: number;
+    attackSpeed: number;
+    lastAttackTime: number;
+};
+
+type Enemy = {
+    id: number;
+    x: number;
+    y: number;
+    health: number;
+    sprite: string;
+};
+
 type GameState = {
     player: Player;
     enemies: Enemy[];
@@ -14,30 +34,6 @@ type GameState = {
         y: number;
         enemyDead: boolean;
     };
-}
-
-type Player = {
-    id: number;
-    name: string;
-    health: number;
-    mana: number;
-    x: number;
-    y: number;
-    sprite: string;
-    speed: number;
-    attackRange: number;
-    attackSpeed: number;
-    lastAttackTime: number;
-    targetX?: number;
-    targetY?: number;
-}
-
-type Enemy = {
-    id: number;
-    x: number;
-    y: number;
-    health: number;
-    sprite: string;
 }
 
 let gameState: GameState | null = null;
@@ -130,9 +126,31 @@ function drawSelectedEnemyPanel(enemy: Enemy) {
 function isWithinAttackRange(enemy: Enemy) {
     if (!gameState) return false;
     const player = gameState.player;
-    const dx = enemy.x - player.x;
-    const dy = enemy.y - player.y;
+    const playerCenterX = player.x + 16; // player sprite 32x32
+    const playerCenterY = player.y + 16;
+    const enemyCenterX = enemy.x + 12;   // enemy sprite 24x24
+    const enemyCenterY = enemy.y + 12;
+    const dx = enemyCenterX - playerCenterX;
+    const dy = enemyCenterY - playerCenterY;
     return Math.hypot(dx, dy) <= player.attackRange;
+}
+
+
+
+function stopAttackLoop() {
+    if (attackIntervalId !== null) {
+        clearInterval(attackIntervalId);
+        attackIntervalId = null;
+    }
+    attackTargetEnemyId = null;
+}
+
+function startAttackLoop(enemyId: number) {
+    // Send a single attack request to set selectedEnemyId on the server.
+    // The server's automatic attack loop will handle subsequent attacks based on cooldown.
+    stopAttackLoop();
+    attackTargetEnemyId = enemyId;
+    attackEnemy(enemyId);
 }
 
 async function attackEnemy(enemyId: number) {
@@ -174,36 +192,6 @@ async function attackEnemy(enemyId: number) {
         console.error('Error attacking enemy:', error);
         stopAttackLoop();
     }
-}
-
-function stopAttackLoop() {
-    if (attackIntervalId !== null) {
-        clearInterval(attackIntervalId);
-        attackIntervalId = null;
-    }
-    attackTargetEnemyId = null;
-}
-
-function startAttackLoop(enemyId: number) {
-    stopAttackLoop();
-    attackTargetEnemyId = enemyId;
-    attackEnemy(enemyId);
-    if (!gameState) return;
-    const attackSpeed = gameState.player.attackSpeed;
-    attackIntervalId = window.setInterval(() => {
-        if (!gameState) {
-            stopAttackLoop();
-            return;
-        }
-
-        const enemy = gameState.enemies.find(e => e.id === enemyId);
-        if (!enemy || !isWithinAttackRange(enemy)) {
-            stopAttackLoop();
-            return;
-        }
-
-        attackEnemy(enemyId);
-    }, attackSpeed * 1000);
 }
 
 async function loadImage(src: string): Promise<HTMLImageElement> {
@@ -316,7 +304,7 @@ world.onload = async () => {
     requestAnimationFrame(gameLoop);
 };
 
-world.src = "../../assets/world.png";
+world.src = "/assets/world.png";
 
 let lastTime: number = 0;
 
@@ -484,5 +472,5 @@ canvas.addEventListener('click', (event) => {
 
     stopAttackLoop();
     selectedEntity = null;
-    movePlayer(x, y);
+    movePlayer(x - 16, y - 16);
 });

@@ -1,33 +1,39 @@
-import { gameState } from "../api/gamestate";
+import { gameState, type Player } from "../api/gamestate";
 import { performAttack } from "../api/performAttack";
 
 export function updateServerMovement(deltaSeconds: number) {
-    const player = gameState.player;
-    if (player.targetX === undefined || player.targetY === undefined) return;
+    // Move all players with targets
+    for (const [playerId, player] of Object.entries(gameState.players)) {
+        if (player.targetX === undefined || player.targetY === undefined) continue;
 
-    const dx = player.targetX - player.x;
-    const dy = player.targetY - player.y;
-    const distance = Math.hypot(dx, dy);
-    const maxDistance = player.speed * deltaSeconds;
+        const dx = player.targetX - player.x;
+        const dy = player.targetY - player.y;
+        const distance = Math.hypot(dx, dy);
+        const maxDistance = player.speed * deltaSeconds;
 
-    if (distance <= maxDistance || distance < 0.5) {
-        player.x = player.targetX;
-        player.y = player.targetY;
-        delete player.targetX;
-        delete player.targetY;
-        return;
+        if (distance <= maxDistance || distance < 0.5) {
+            player.x = player.targetX;
+            player.y = player.targetY;
+            delete player.targetX;
+            delete player.targetY;
+        } else {
+            const ratio = maxDistance / distance;
+            player.x += dx * ratio;
+            player.y += dy * ratio;
+        }
+
+        // Keep alias updated for self
+        if (gameState.selfId && gameState.selfId === playerId) {
+            gameState.player = player;
+        }
     }
-
-    const ratio = maxDistance / distance;
-    player.x += dx * ratio;
-    player.y += dy * ratio;
 }
 
 export function updateAutomaticAttack() {
-    // Perform automatic attack on selected enemy
-    if (gameState.selectedEnemyId !== null) {
-        const result = performAttack(gameState.selectedEnemyId);
-        if (!result) {
+    // Perform automatic attacks per selectedTargets
+    for (const [playerId, enemyId] of Object.entries(gameState.selectedTargets)) {
+        if (typeof enemyId === "number") {
+            performAttack(playerId, enemyId);
         }
     }
 }

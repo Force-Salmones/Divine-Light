@@ -1,7 +1,24 @@
+export type AttackEvent = {
+    playerId: string;
+    enemyId: number;
+    damage: number;
+    timestamp: number;
+    x: number;
+    y: number;
+    enemyDead: boolean;
+};
+
 export type GameState = {
-    player: Player;
+    // Multiplayer primary fields
+    players: Record<string, Player>;
     enemies: Enemy[];
-    selectedEnemyId: number | null;
+    selectedTargets: Record<string, number | null>; // per-player selected enemy
+    lastAttackEvents: AttackEvent[]; // log of recent attack events
+    selfId?: string; // the playerId for this session (dev only for now)
+
+    // Backward-compatibility aliases for current client
+    player: Player; // alias to players[selfId]
+    selectedEnemyId: number | null; // alias to selectedTargets[selfId]
     lastAttackResult?: {
         enemyId: number;
         damage: number;
@@ -69,6 +86,12 @@ export type Enemy = {
 }
 
 export let gameState: GameState = {
+    players: {},
+    enemies: [],
+    selectedTargets: {},
+    lastAttackEvents: [],
+    selfId: undefined,
+    // Backward compatibility defaults
     player: {
         id: "",
         name: "",
@@ -96,6 +119,5 @@ export let gameState: GameState = {
         lastAttackTime: 0,
         inventory: {}
     },
-    enemies: [],
     selectedEnemyId: null
 };
