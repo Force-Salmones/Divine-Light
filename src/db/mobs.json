@@ -1,0 +1,20 @@
+{
+    "0": {
+        "name": "Slime",
+        "level": 1,
+        "experience": 10,
+        "gold": 5,
+        "health": 50,
+        "damage": 5,
+        "damageType": "physical",
+        "attackSpeed": 1,
+        "attackRange": 50,
+        "defense": 0,
+        "resistance": 0,
+        "speed": 50,
+        "reSpawnTime": 15,
+        "aggressive": true,
+        "retreats": false,
+        "drops": {}
+    }
+}
