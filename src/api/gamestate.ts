@@ -44,6 +44,7 @@ export type Player = {
 
 export type Enemy = {
     //mobId is the type of enemy defined in ../db/mobs.json
+    //the mobId of the enemy is also the filename of the sprite for the enemy in ../assets/mobs/
     mobId: number;
     name: string;
     level: number;
@@ -61,7 +62,9 @@ export type Enemy = {
     reSpawnTime: number;
     aggressive: true;
     retreats: false;
-    drops: {}
+    drops: {};
+    posX: number;
+    posY: number;
 }
 
 export let gameState: GameState = {
