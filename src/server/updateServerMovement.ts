@@ -1,5 +1,6 @@
 import { gameState, type Player } from "../api/gamestate";
 import { performAttack } from "../api/performAttack";
+import { updateRespawns } from "./respawn";
 
 export function updateServerMovement(deltaSeconds: number) {
     // Move all players with targets
@@ -27,6 +28,8 @@ export function updateServerMovement(deltaSeconds: number) {
             gameState.player = player;
         }
     }
+    // Also advance respawn logic once per tick
+    void updateRespawns();
 }
 
 export function updateAutomaticAttack() {

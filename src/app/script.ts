@@ -43,6 +43,8 @@ let attackTargetEnemyId: number | null = null;
 let attackIntervalId: number | null = null;
 let gameStatePollId: number | null = null;
 let lastProcessedAttackTimestamp: number = 0;
+let gameSocket: WebSocket | null = null;
+const pendingMessages: any[] = []; // queue messages until socket is open
 
 type DamageNumber = {
     text: string;
@@ -145,53 +147,20 @@ function stopAttackLoop() {
     attackTargetEnemyId = null;
 }
 
-function startAttackLoop(enemyId: number) {
-    // Send a single attack request to set selectedEnemyId on the server.
-    // The server's automatic attack loop will handle subsequent attacks based on cooldown.
-    stopAttackLoop();
-    attackTargetEnemyId = enemyId;
-    attackEnemy(enemyId);
+function sendGameMessage(msg: any) {
+    console.log('Client WS send', msg, 'enemyId type:', typeof (msg as any).enemyId);
+    if (gameSocket && gameSocket.readyState === WebSocket.OPEN) {
+        gameSocket.send(JSON.stringify(msg));
+    } else {
+        pendingMessages.push(msg);
+    }
 }
 
-async function attackEnemy(enemyId: number) {
-    try {
-        const response = await fetch('/api/attack-enemy', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ enemyId })
-        });
-        const data = await response.json();
-        
-        if (!data.success) {
-            // Handle cooldown silently (expected during attack intervals)
-            if (response.status === 429) {
-                return;
-            }
-            
-            // Handle actual errors
-            console.error('Attack failed:', data.message);
-            stopAttackLoop();
-            return;
-        }
-
-        if (data.enemyDead) {
-            if (gameState) {
-                gameState.enemies = gameState.enemies.filter(e => e.id !== enemyId);
-            }
-            stopAttackLoop();
-            return;
-        }
-
-        if (typeof data.enemyHealth === 'number') {
-            const enemy = gameState?.enemies.find(e => e.id === enemyId);
-            if (enemy) {
-                enemy.health = data.enemyHealth;
-            }
-        }
-    } catch (error) {
-        console.error('Error attacking enemy:', error);
-        stopAttackLoop();
-    }
+function startAttackLoop(enemyId: number) {
+    // WebSocket: send one attack message; server handles auto-attacks
+    stopAttackLoop();
+    attackTargetEnemyId = enemyId;
+    sendGameMessage({ type: 'attack', enemyId });
 }
 
 async function loadImage(src: string): Promise<HTMLImageElement> {
@@ -238,69 +207,85 @@ async function refreshSpritesIfNeeded() {
     });
 }
 
-async function refreshGameState() {
-    try {
-        const response = await fetch('/api/game-state');
-        const data = await response.json();
-        const loadedGameState = data.gameState as GameState;
-        
-        if (loadedGameState.player.speed === undefined) {
-            loadedGameState.player.speed = 120;
-        }
-        if (loadedGameState.player.attackRange === undefined) {
-            loadedGameState.player.attackRange = 48;
-        }
-        if (loadedGameState.player.attackSpeed === undefined) {
-            loadedGameState.player.attackSpeed = 1;
-        }
-        gameState = loadedGameState;
-        await refreshSpritesIfNeeded();
+async function handleGameStateMessage(loadedGameState: GameState) {
+    // Fallback defaults for missing values
+    if (loadedGameState.player.speed === undefined) {
+        loadedGameState.player.speed = 120;
+    }
+    if (loadedGameState.player.attackRange === undefined) {
+        loadedGameState.player.attackRange = 48;
+    }
+    if (loadedGameState.player.attackSpeed === undefined) {
+        loadedGameState.player.attackSpeed = 1;
+    }
 
-        // Handle automatic attack damage display
-        if (gameState && gameState.lastAttackResult) {
-            const attackResult = gameState.lastAttackResult;
-            if (attackResult.timestamp > lastProcessedAttackTimestamp) {
-                lastProcessedAttackTimestamp = attackResult.timestamp;
-                spawnDamageNumber(attackResult.x + 12, attackResult.y, attackResult.damage.toString());
+    gameState = loadedGameState;
+    await refreshSpritesIfNeeded();
+
+    if (gameState.lastAttackResult && gameState.lastAttackResult.timestamp > lastProcessedAttackTimestamp) {
+        lastProcessedAttackTimestamp = gameState.lastAttackResult.timestamp;
+        const ar = gameState.lastAttackResult;
+        spawnDamageNumber(ar.x + 12, ar.y, ar.damage.toString());
+
+        // If the last attack killed the enemy, stop auto-attacking and clear selection.
+        // This prevents automatically re-attacking or auto-selecting when the mob respawns.
+        if (ar.enemyDead) {
+            stopAttackLoop();
+            if (selectedEntity?.type === 'enemy' && selectedEntity.id === ar.enemyId) {
+                selectedEntity = null;
             }
         }
+    }
 
-        if (attackTargetEnemyId !== null && gameState) {
-            const enemy = gameState.enemies.find(e => e.id === attackTargetEnemyId);
-            if (enemy && isWithinAttackRange(enemy)) {
-                startAttackLoop(enemy.id);
-            }
+    if (attackTargetEnemyId !== null && gameState) {
+        const enemy = gameState.enemies.find(e => e.id === attackTargetEnemyId);
+        if (!enemy) {
+            // Target no longer exists (likely died); ensure we stop tracking it
+            stopAttackLoop();
+        } else if (isWithinAttackRange(enemy)) {
+            startAttackLoop(enemy.id);
         }
-    } catch (error) {
-        console.error('Failed to refresh game state:', error);
     }
 }
 
-async function loadGameState() {
-    try {
-        const response = await fetch('/api/game-state');
-        const data = await response.json();
-        const loadedGameState = data.gameState as GameState;
-        if (loadedGameState.player.speed === undefined) {
-            loadedGameState.player.speed = 120;
-        }
-        if (loadedGameState.player.attackRange === undefined) {
-            loadedGameState.player.attackRange = 48;
-        }
-        if (loadedGameState.player.attackSpeed === undefined) {
-            loadedGameState.player.attackSpeed = 1;
-        }
-        gameState = loadedGameState;
-        await loadSprites();
-    } catch (error) {
-        console.error('Failed to load game state or sprites:', error);
+function connectGameSocket() {
+    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    const url = `${protocol}://${window.location.host}/ws`;
+
+    if (gameSocket) {
+        try { gameSocket.close(); } catch {}
     }
+    gameSocket = new WebSocket(url);
+
+    gameSocket.onopen = () => {
+        console.log('Connected to game websocket');
+        // Flush queued messages
+        while (pendingMessages.length) {
+            const msg = pendingMessages.shift();
+            try { gameSocket?.send(JSON.stringify(msg)); } catch {}
+        }
+    };
+    gameSocket.onmessage = async (event) => {
+        try {
+            const data = JSON.parse(event.data);
+            if (data.type === 'gameState') {
+                await handleGameStateMessage(data.gameState as GameState);
+            }
+        } catch (err) {
+            console.error('WS message parse error:', err);
+        }
+    };
+    gameSocket.onclose = () => {
+        console.warn('Game websocket closed, reconnecting in 1s...');
+        window.setTimeout(connectGameSocket, 1000);
+    };
+    gameSocket.onerror = (event) => {
+        console.error('Game websocket error:', event);
+    };
 }
 
 world.onload = async () => {
-    await loadGameState();
-    gameStatePollId = window.setInterval(refreshGameState, 100);
-    // Start the game loop after loading
+    connectGameSocket();
     requestAnimationFrame(gameLoop);
 };
 
@@ -415,25 +400,10 @@ function render() {
 }
 
 async function movePlayer(x?: number, y?: number, enemyId?: number) {
-    try {
-        const body: Record<string, number> = enemyId !== undefined ? { enemyId } : { x: x ?? 0, y: y ?? 0 };
-        const response = await fetch('/api/move-player', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body)
-        });
-        const data = await response.json();
-        if (!data.success) {
-            console.error('Failed to move player:', data.message);
-            return;
-        }
-
-        if (data.gameState) {
-            gameState = data.gameState as GameState;
-            await refreshSpritesIfNeeded();
-        }
-    } catch (error) {
-        console.error('Error moving player:', error);
+    if (typeof enemyId === 'number') {
+        sendGameMessage({ type: 'move', enemyId });
+    } else if (typeof x === 'number' && typeof y === 'number') {
+        sendGameMessage({ type: 'move', x, y });
     }
 }
 
@@ -448,13 +418,13 @@ canvas.addEventListener('click', (event) => {
         if (enemy) {
             if (selectedEntity?.type === 'enemy' && selectedEntity.id === hit.id) {
                 selectedEntity = hit;
-                if (isWithinAttackRange(enemy)) {
-                    startAttackLoop(enemy.id);
-                    return;
-                }
-
+                // Always request attack; server will auto-attack when in range
                 attackTargetEnemyId = enemy.id;
-                movePlayer(0, 0, enemy.id);
+                if (!isWithinAttackRange(enemy)) {
+                    // Ask server to move toward this enemy; coordinates are computed server-side
+                    movePlayer(undefined, undefined, enemy.id);
+                }
+                startAttackLoop(enemy.id);
                 return;
             }
 

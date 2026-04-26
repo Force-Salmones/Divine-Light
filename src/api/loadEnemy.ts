@@ -1,17 +1,18 @@
 import { readFile } from "fs/promises";
 import type { Enemy } from "./gamestate";
+import type { Mob } from "../db/schema";
 
-export async function loadEnemy(id: number): Promise<Enemy> {
+export async function loadEnemy(mob: Mob): Promise<Enemy> {
     const jsonRaw = await readFile(new URL("../db/mobs.json", import.meta.url), "utf8");
     const jsonData = JSON.parse(jsonRaw);
-    const mobData = jsonData[id];
+    const mobData = jsonData[mob.mobId];
     if (!mobData) {
-        throw new Error(`Enemy type ${id} not found in mobs.json`);
+        throw new Error(`Enemy type ${mob.mobId} not found in mobs.json`);
     }
 
     const enemy: Enemy = {
-        id,
-        mobId: id,
+        id: mob.id, // unique instance id from DB row
+        mobId: mob.mobId, // enemy type id
         name: mobData.name,
         level: mobData.level,
         experience: mobData.experience,
@@ -28,9 +29,9 @@ export async function loadEnemy(id: number): Promise<Enemy> {
         aggressive: mobData.aggressive,
         retreats: mobData.retreats,
         drops: mobData.drops,
-        x: 300,
-        y: 300,
-        sprite: `/assets/mobs/${id}.png`
+        x: mob.homeX,
+        y: mob.homeY,
+        sprite: `/assets/mobs/${mob.mobId}.png`
     };
     return enemy;
 }

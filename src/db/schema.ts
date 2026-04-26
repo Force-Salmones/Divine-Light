@@ -1,4 +1,4 @@
-import { pgTable, timestamp, uuid, varchar, integer, jsonb, boolean, bigint } from "drizzle-orm/pg-core";
+import { pgTable, timestamp, uuid, serial, varchar, integer, jsonb, boolean, bigint } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
     id: uuid("id").primaryKey().defaultRandom().notNull(),
@@ -29,8 +29,8 @@ export const users = pgTable("users", {
 });
 
 export const mobs = pgTable("mobs", {
-    id: uuid("id").primaryKey().defaultRandom().notNull(),
-    mobId: integer("mob_id").notNull().unique(),
+    id: serial("id").primaryKey().notNull(),
+    mobId: integer("mob_id").notNull(),
     homeX: integer("home_x").notNull().default(300),
     homeY: integer("home_y").notNull().default(300),
 });

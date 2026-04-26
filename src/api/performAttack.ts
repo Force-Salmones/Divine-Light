@@ -1,4 +1,5 @@
 import { gameState, type Enemy, type Player } from "./gamestate";
+import { scheduleMobRespawn } from "../server/respawn";
 
 export interface AttackResult {
     success: boolean;
@@ -30,6 +31,7 @@ export function performAttack(playerId: string, enemyId: number): AttackResult |
     
     // Check if in range
     if (distance > player.attackRange) {
+        console.log("performAttack: out of range", { playerId, enemyId, distance, attackRange: player.attackRange });
         return null;
     }
 
@@ -37,6 +39,7 @@ export function performAttack(playerId: string, enemyId: number): AttackResult |
     const now = Date.now() / 1000; // Convert to seconds
     const timeSinceLastAttack = now - player.lastAttackTime;
     if (timeSinceLastAttack < player.attackSpeed) {
+        console.log("performAttack: on cooldown", { playerId, enemyId, timeSinceLastAttack, attackSpeed: player.attackSpeed });
         return null;
     }
 
@@ -45,6 +48,7 @@ export function performAttack(playerId: string, enemyId: number): AttackResult |
 
     // Deal damage (placeholder; later incorporate stats)
     const damage = 10;
+    console.log("performAttack: success", { playerId, enemyId, damage, distance });
     const attackX = enemy.x;
     const attackY = enemy.y;
     enemy.health -= damage;
@@ -74,6 +78,7 @@ export function performAttack(playerId: string, enemyId: number): AttackResult |
     }
 
     if (enemyDead) {
+        // Remove from current enemies
         gameState.enemies = gameState.enemies.filter((e: Enemy) => e.id !== enemyId);
         // Clear selections
         Object.keys(gameState.selectedTargets).forEach((pid) => {
@@ -84,6 +89,12 @@ export function performAttack(playerId: string, enemyId: number): AttackResult |
         // Back-compat alias
         if (gameState.selfId && gameState.selectedEnemyId === enemyId) {
             gameState.selectedEnemyId = null;
+        }
+        // Schedule respawn
+        try {
+            scheduleMobRespawn(enemy);
+        } catch (err) {
+            console.error("Failed to schedule mob respawn:", err);
         }
         // TODO: call defeatEnemy(playerId, enemy.mobId)
     }

@@ -60,10 +60,8 @@ export type Player = {
 }
 
 export type Enemy = {
-    id: number;
-    // mobId is the enemy type defined in ../db/mobs.json
-    // the mobId is also the filename of the sprite for the enemy in ../assets/mobs/
-    mobId: number;
+    id: number; // unique instance ID for this enemy on the map
+    mobId: number; //enemy type, corresponds to mobs.json and sprite file
     name: string;
     level: number;
     experience: number;
