@@ -22,9 +22,6 @@ export function performAttack(playerId: string, enemyId: number): AttackResult |
         return null;
     }
 
-    // Mark this player as the enemy's current target (aggro)
-    enemy.targetPlayerId = player.id;
-
     // Use sprite centers for distance (player 32x32, enemy 24x24)
     const playerCenterX = player.x + 16;
     const playerCenterY = player.y + 16;
@@ -50,6 +47,9 @@ export function performAttack(playerId: string, enemyId: number): AttackResult |
 
     // Update last attack time
     player.lastAttackTime = now;
+
+    // Now that we know this is a valid, in-range attack, mark this player as the enemy's target (aggro)
+    enemy.targetPlayerId = player.id;
 
     // Deal physical damage based on player stats and enemy defense
     const damage = rollPhysicalDamage(player, enemy);

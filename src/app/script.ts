@@ -196,6 +196,8 @@ function stopAttackLoop() {
         attackIntervalId = null;
     }
     attackTargetEnemyId = null;
+    // Tell the server to stop auto-attacking on our behalf
+    sendGameMessage({ type: 'stopAttack' });
 }
 
 function sendGameMessage(msg: any) {
