@@ -15,6 +15,7 @@ import { WebSocketServer } from "ws";
 import { getAllMobs } from "@/db/queries/mobs";
 import { adminChatCommands, type ChatCommandContext } from "./chatCommands";
 import { initChatService, broadcastChatMessage, sendChatToPlayer } from "./chatService";
+import { updateUser } from "../db/queries/users";
 
 const app = express();
 
@@ -64,9 +65,45 @@ async function initializeGameState() {
     gameState.selectedEnemyId = null;
 }
 
+async function persistPlayer(playerId: string) {
+    const player = gameState.players[playerId];
+    if (!player) return;
+    try {
+        await updateUser(
+            player.id,
+            player.level,
+            player.experience,
+            player.unallocatedPoints,
+            player.STR,
+            player.VIT,
+            player.DEX,
+            player.LUK,
+            player.INT,
+            player.WIS,
+            player.inventory,
+            player.gold,
+            Math.round(player.x),
+            Math.round(player.y)
+        );
+    } catch (err) {
+        console.error("Failed to persist player", playerId, err);
+    }
+}
+
+async function persistAllPlayers() {
+    const ids = Object.keys(gameState.players);
+    await Promise.all(ids.map((id) => persistPlayer(id)));
+}
+
 async function startServer() {
     await initializeGameState();
     startTickLoop();
+
+    // Periodic persistence of all online players (every 60 seconds)
+    setInterval(() => {
+        void persistAllPlayers();
+    }, 60_000);
+
     const server = app.listen(+config.server_port, () => {
         console.log(`Server is running on port ${config.server_port}`);
     });
@@ -83,6 +120,13 @@ async function startServer() {
             (ws as any).playerId = playerId;
             // Send initial snapshot
             ws.send(JSON.stringify({ type: "gameState", gameState }));
+
+            ws.on("close", () => {
+                const pid: string | undefined = (ws as any).playerId;
+                if (pid) {
+                    void persistPlayer(pid);
+                }
+            });
 
             ws.on("message", (raw: any) => {
                 try {

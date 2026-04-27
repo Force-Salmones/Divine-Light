@@ -26,6 +26,7 @@ export async function updateUser(
     id: string,
     level: number,
     experience: number,
+    unallocatedPoints: number,
     baseSTR: number,
     baseVIT: number,
     baseDEX: number,
@@ -39,6 +40,7 @@ export async function updateUser(
     const [result] = await db.update(users).set({
         level: level,
         experience: experience,
+        unallocatedPoints: unallocatedPoints,
         baseSTR: baseSTR,
         baseVIT: baseVIT,
         baseDEX: baseDEX,
