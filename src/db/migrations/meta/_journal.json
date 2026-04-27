@@ -29,6 +29,13 @@
       "when": 1777242361086,
       "tag": "0003_loving_komodo",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1777259920216,
+      "tag": "0004_soft_salo",
+      "breakpoints": true
     }
   ]
 }

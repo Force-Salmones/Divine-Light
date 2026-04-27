@@ -1,5 +1,6 @@
 import { gameState, type Enemy, type Player } from "./gamestate";
 import { scheduleMobRespawn } from "../server/respawn";
+import { defeatEnemy } from "./defeatEnemy";
 
 export interface AttackResult {
     success: boolean;
@@ -51,8 +52,8 @@ export function performAttack(playerId: string, enemyId: number): AttackResult |
     console.log("performAttack: success", { playerId, enemyId, damage, distance });
     const attackX = enemy.x;
     const attackY = enemy.y;
-    enemy.health -= damage;
-    const enemyDead = enemy.health <= 0;
+    enemy.currHealth -= damage;
+    const enemyDead = enemy.currHealth <= 0;
 
     // Log event for multiplayer
     gameState.lastAttackEvents.push({
@@ -78,6 +79,14 @@ export function performAttack(playerId: string, enemyId: number): AttackResult |
     }
 
     if (enemyDead) {
+        // Award experience, gold, etc. for defeating the enemy
+        try {
+            // Use the same player object reference from gameState so changes are visible in snapshots
+            void defeatEnemy(player, enemy);
+        } catch (err) {
+            console.error("defeatEnemy failed", err);
+        }
+
         // Remove from current enemies
         gameState.enemies = gameState.enemies.filter((e: Enemy) => e.id !== enemyId);
         // Clear selections
@@ -110,7 +119,7 @@ export function performAttack(playerId: string, enemyId: number): AttackResult |
     return {
         success: true,
         enemyId,
-        enemyHealth: Math.max(0, enemy.health),
+        enemyHealth: Math.max(0, enemy.currHealth),
         enemyDead
     };
 }

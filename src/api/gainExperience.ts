@@ -15,5 +15,5 @@ export function gainExperience(player: Player, amount: number): void {
     }
 }
 export function expToLevelUp(level: number): number {
-    return 100 * 1.1 ** (level - 1);
+    return Math.floor(100 * 1.1 ** (level - 1));
 }

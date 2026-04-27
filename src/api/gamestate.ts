@@ -70,7 +70,8 @@ export type Enemy = {
     level: number;
     experience: number;
     gold: number;
-    health: number;
+    currHealth: number;
+    maxHealth: number;
     damage: number;
     damageType: "physical" | "magical" | "true";
     attackSpeed: number;

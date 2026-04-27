@@ -18,6 +18,14 @@ let chatInput: HTMLInputElement | null = null;
 // Client-side types (subset mirrored from server for rendering)
 type Player = {
     id: string;
+    name: string;
+    level: number;
+    experience: number;
+    expToNextLevel: number;
+    currHealth: number;
+    maxHealth: number;
+    currMana: number;
+    maxMana: number;
     x: number;
     y: number;
     sprite: string;
@@ -29,9 +37,12 @@ type Player = {
 
 type Enemy = {
     id: number;
+    name: string;
+    level: number;
+    currHealth: number;
+    maxHealth: number;
     x: number;
     y: number;
-    health: number;
     sprite: string;
 };
 
@@ -117,8 +128,8 @@ function drawAttackRangeCircle(radius: number) {
 function drawSelectedEnemyPanel(enemy: Enemy) {
     const panelX = 10;
     const panelY = 10;
-    const panelWidth = 180;
-    const panelHeight = 70;
+    const panelWidth = 220;
+    const panelHeight = 80;
 
     ctx.save();
     ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
@@ -129,12 +140,27 @@ function drawSelectedEnemyPanel(enemy: Enemy) {
 
     ctx.fillStyle = 'white';
     ctx.font = '14px sans-serif';
-    ctx.fillText(`Enemy #${enemy.id}`, panelX + 10, panelY + 24);
-    ctx.fillText(`HP: ${enemy.health}`, panelX + 10, panelY + 44);
+    ctx.fillText(enemy.name || `Enemy #${enemy.id}`, panelX + 10, panelY + 22);
+    ctx.font = '12px sans-serif';
+    ctx.fillText(`Level ${enemy.level}`, panelX + 10, panelY + 38);
+    ctx.fillText(`HP: ${enemy.currHealth}/${enemy.maxHealth}`, panelX + 10, panelY + 54);
 
     const status = isWithinAttackRange(enemy) ? 'In range' : 'Out of range';
     ctx.fillStyle = status === 'In range' ? 'lightgreen' : 'lightcoral';
-    ctx.fillText(status, panelX + 10, panelY + 64);
+    ctx.fillText(status, panelX + 10, panelY + 70);
+
+    // Draw enemy sprite on the right side of the panel
+    const spriteImg = sprites.get(enemy.sprite);
+    const spriteSize = 32;
+    const spriteX = panelX + panelWidth - spriteSize - 8;
+    const spriteY = panelY + (panelHeight - spriteSize) / 2;
+    if (spriteImg) {
+        ctx.drawImage(spriteImg, spriteX, spriteY, spriteSize, spriteSize);
+    } else {
+        ctx.fillStyle = 'green';
+        ctx.fillRect(spriteX, spriteY, spriteSize, spriteSize);
+    }
+
     ctx.restore();
 }
 
@@ -203,23 +229,6 @@ async function loadImage(src: string): Promise<HTMLImageElement> {
         img.onload = () => resolve(img);
         img.onerror = reject;
         img.src = src;
-    });
-}
-
-async function loadSprites() {
-    if (!gameState) return;
-
-    const spriteUrls = new Set<string>();
-    spriteUrls.add(gameState.player.sprite);
-    gameState.enemies.forEach(enemy => spriteUrls.add(enemy.sprite));
-
-    const promises = Array.from(spriteUrls).map(url => loadImage(url));
-    const images = await Promise.all(promises);
-
-    Array.from(spriteUrls).forEach((url, index) => {
-        if (images[index]) {
-            sprites.set(url, images[index]);
-        }
     });
 }
 
@@ -339,7 +348,7 @@ world.onload = async () => {
         chatContainer.style.position = 'fixed';
         chatContainer.style.left = '10px';
         chatContainer.style.bottom = '10px';
-        chatContainer.style.width = '320px';
+        chatContainer.style.width = '600px';
         chatContainer.style.maxHeight = '220px';
         chatContainer.style.display = 'flex';
         chatContainer.style.flexDirection = 'column';
@@ -491,6 +500,7 @@ function render() {
 
     renderDamageNumbers();
 
+    // Enemy info panel (top-left)
     if (selectedEntity?.type === 'enemy') {
         const selected = selectedEntity;
         const enemy = gameState.enemies.find(e => e.id === selected.id);
@@ -498,6 +508,44 @@ function render() {
             drawSelectedEnemyPanel(enemy);
         }
     }
+
+    // Player info panel (bottom-right)
+    drawPlayerInfoPanel();
+}
+
+function drawPlayerInfoPanel() {
+    if (!gameState) return;
+    const p = gameState.player;
+
+    const panelWidth = 260;
+    const panelHeight = 90;
+    const panelX = canvas.width - panelWidth - 10;
+    const panelY = canvas.height - panelHeight - 10;
+
+    ctx.save();
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+    ctx.fillRect(panelX, panelY, panelWidth, panelHeight);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(panelX, panelY, panelWidth, panelHeight);
+
+    ctx.fillStyle = 'white';
+    ctx.font = '14px sans-serif';
+    ctx.fillText(p.name || 'Player', panelX + 10, panelY + 20);
+    ctx.font = '12px sans-serif';
+    ctx.fillText(`Level ${p.level}`, panelX + 10, panelY + 36);
+
+    // Health
+    ctx.fillText(`HP: ${p.currHealth}/${p.maxHealth}`, panelX + 10, panelY + 52);
+
+    // Mana
+    ctx.fillText(`MP: ${p.currMana}/${p.maxMana}`, panelX + 10, panelY + 66);
+
+    // Experience
+    const expText = `${p.experience}/${p.expToNextLevel}`;
+    ctx.fillText(`EXP: ${expText}`, panelX + 10, panelY + 80);
+
+    ctx.restore();
 }
 
 async function movePlayer(x?: number, y?: number, enemyId?: number) {

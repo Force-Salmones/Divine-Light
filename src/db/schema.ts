@@ -13,12 +13,12 @@ export const users = pgTable("users", {
     level: integer("level").notNull().default(1),
     experience: bigint("experience", { mode: "number" }).notNull().default(0),
     unallocatedPoints: integer("unallocated_points").notNull().default(0),
-    baseSTR: integer("base_str").notNull().default(5),
-    baseVIT: integer("base_vit").notNull().default(5),
-    baseDEX: integer("base_dex").notNull().default(5),
-    baseLUK: integer("base_luk").notNull().default(5),
-    baseINT: integer("base_int").notNull().default(5),
-    baseWIS: integer("base_wis").notNull().default(5),
+    baseSTR: integer("base_str").notNull().default(4),
+    baseVIT: integer("base_vit").notNull().default(4),
+    baseDEX: integer("base_dex").notNull().default(4),
+    baseLUK: integer("base_luk").notNull().default(4),
+    baseINT: integer("base_int").notNull().default(4),
+    baseWIS: integer("base_wis").notNull().default(4),
     inventory: jsonb("inventory").notNull().default(JSON.stringify({
         equipment: {},
         items: {}

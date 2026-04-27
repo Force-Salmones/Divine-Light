@@ -2,7 +2,7 @@
     "0": {
         "name": "Slime",
         "level": 1,
-        "experience": 3,
+        "experience": 50,
         "gold": 5,
         "health": 50,
         "damage": 5,
