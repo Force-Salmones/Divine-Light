@@ -78,6 +78,7 @@ let attackTargetEnemyId: number | null = null;
 let attackIntervalId: number | null = null;
 let gameStatePollId: number | null = null;
 let lastProcessedAttackTimestamp: number = 0;
+let hasInitializedAttackHistory = false;
 let gameSocket: WebSocket | null = null;
 const pendingMessages: any[] = []; // queue messages until socket is open
 
@@ -276,7 +277,14 @@ async function handleGameStateMessage(loadedGameState: GameState) {
     gameState = loadedGameState;
     await refreshSpritesIfNeeded();
 
-    if (gameState.lastAttackResult && gameState.lastAttackResult.timestamp > lastProcessedAttackTimestamp) {
+    // Avoid replaying old attack events on initial load: initialize the lastProcessed
+    // timestamp from the first snapshot without spawning damage numbers.
+    if (!hasInitializedAttackHistory) {
+        if (gameState.lastAttackResult) {
+            lastProcessedAttackTimestamp = gameState.lastAttackResult.timestamp;
+        }
+        hasInitializedAttackHistory = true;
+    } else if (gameState.lastAttackResult && gameState.lastAttackResult.timestamp > lastProcessedAttackTimestamp) {
         lastProcessedAttackTimestamp = gameState.lastAttackResult.timestamp;
         const ar = gameState.lastAttackResult;
         spawnDamageNumber(ar.x + 12, ar.y, ar.damage.toString());
