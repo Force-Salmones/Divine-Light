@@ -22,6 +22,8 @@ const app = express();
 const TICK_INTERVAL_MS = 100;
 let lastTick = Date.now();
 let wss: WebSocketServer | null = null;
+let httpServer: any = null;
+let shuttingDown = false;
 
 function broadcastGameState() {
     if (!wss) return;
@@ -95,6 +97,41 @@ async function persistAllPlayers() {
     await Promise.all(ids.map((id) => persistPlayer(id)));
 }
 
+async function shutdown(reason: string) {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    console.log("Shutdown initiated:", reason);
+    try {
+        await persistAllPlayers();
+    } catch (err) {
+        console.error("Error persisting players during shutdown", err);
+    }
+
+    try {
+        if (wss) {
+            wss.clients.forEach((client: any) => {
+                try { client.close(); } catch {}
+            });
+            try { wss.close(); } catch {}
+        }
+    } catch (err) {
+        console.error("Error closing WebSocket server", err);
+    }
+
+    if (httpServer) {
+        try {
+            httpServer.close(() => {
+                process.exit(0);
+            });
+        } catch (err) {
+            console.error("Error closing HTTP server", err);
+            process.exit(1);
+        }
+    } else {
+        process.exit(0);
+    }
+}
+
 async function startServer() {
     await initializeGameState();
     startTickLoop();
@@ -107,6 +144,7 @@ async function startServer() {
     const server = app.listen(+config.server_port, () => {
         console.log(`Server is running on port ${config.server_port}`);
     });
+    httpServer = server;
 
     // Attach WebSocket server for gameplay on the same HTTP server
     wss = new WebSocketServer({ server, path: "/ws" });
@@ -151,6 +189,12 @@ async function startServer() {
                                 const args = parts.slice(1);
                                 if (!commandName) {
                                     sendChatToPlayer(currentPlayerId, "No command specified after $", true);
+                                    break;
+                                }
+                                if (commandName === "shutdown") {
+                                    sendChatToPlayer(currentPlayerId, "Server is shutting down...", true);
+                                    broadcastChatMessage("Server is shutting down...", undefined, true);
+                                    void shutdown(`Requested by ${currentPlayerId}`);
                                     break;
                                 }
                                 const handler = adminChatCommands[commandName as keyof typeof adminChatCommands] ?? adminChatCommands[commandName as string];
@@ -336,4 +380,12 @@ app.get("/", (req: Request, res: Response) => {
 void startServer().catch((error) => {
     console.error("Failed to start server:", error);
     process.exit(1);
+});
+
+process.on("SIGINT", () => {
+    void shutdown("SIGINT");
+});
+
+process.on("SIGTERM", () => {
+    void shutdown("SIGTERM");
 });
