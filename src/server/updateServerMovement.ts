@@ -1,6 +1,7 @@
-import { gameState, type Player } from "../api/gamestate";
+import { gameState, type Player, type Enemy } from "../api/gamestate";
 import { performAttack } from "../api/performAttack";
 import { updateRespawns } from "./respawn";
+import { rollEnemyDamage } from "../api/calcDamage";
 
 export function updateServerMovement(deltaSeconds: number) {
     // Move all players with targets
@@ -28,6 +29,100 @@ export function updateServerMovement(deltaSeconds: number) {
             gameState.player = player;
         }
     }
+    // Enemy AI: movement + attacks
+    const LEASH_DISTANCE = 300;
+
+    for (const enemy of gameState.enemies as Enemy[]) {
+        const targetId = enemy.targetPlayerId ?? null;
+
+        if (targetId) {
+            const player = gameState.players[targetId];
+            if (!player) {
+                enemy.targetPlayerId = null;
+                enemy.targetX = enemy.homeX;
+                enemy.targetY = enemy.homeY;
+            } else {
+                // Check leash distance from home
+                const homeDx = enemy.x - enemy.homeX;
+                const homeDy = enemy.y - enemy.homeY;
+                const distFromHome = Math.hypot(homeDx, homeDy);
+                if (distFromHome > LEASH_DISTANCE) {
+                    // Too far from home: drop aggro and return
+                    enemy.targetPlayerId = null;
+                    enemy.targetX = enemy.homeX;
+                    enemy.targetY = enemy.homeY;
+                } else {
+                    // Chase the player if out of range
+                    const enemyCenterX = enemy.x + 12;
+                    const enemyCenterY = enemy.y + 12;
+                    const playerCenterX = player.x + 16;
+                    const playerCenterY = player.y + 16;
+                    const dx = playerCenterX - enemyCenterX;
+                    const dy = playerCenterY - enemyCenterY;
+                    const distance = Math.hypot(dx, dy);
+                    const approachMargin = 3;
+                    const desiredDistance = Math.max(0, enemy.attackRange - approachMargin);
+
+                    if (distance > desiredDistance && distance > 0) {
+                        const ratio = (distance - desiredDistance) / distance;
+                        const targetCenterX = enemyCenterX + dx * ratio;
+                        const targetCenterY = enemyCenterY + dy * ratio;
+                        enemy.targetX = targetCenterX - 12; // enemy sprite 24x24
+                        enemy.targetY = targetCenterY - 12;
+                    } else {
+                        enemy.targetX = undefined;
+                        enemy.targetY = undefined;
+                    }
+
+                    // Attempt an attack if in range and off cooldown
+                    if (distance <= enemy.attackRange) {
+                        const now = Date.now() / 1000;
+                        const timeSinceLast = now - (enemy.lastAttackTime ?? 0);
+                        if (timeSinceLast >= enemy.attackSpeed) {
+                            enemy.lastAttackTime = now;
+                            const damage = rollEnemyDamage(enemy, player);
+                            if (damage > 0) {
+                                player.currHealth = Math.max(0, player.currHealth - damage);
+                                // (Optional) log or future event for UI
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            // No target: if away from home, walk back
+            const dxHome = enemy.homeX - enemy.x;
+            const dyHome = enemy.homeY - enemy.y;
+            const distHome = Math.hypot(dxHome, dyHome);
+            if (distHome > 1) {
+                enemy.targetX = enemy.homeX;
+                enemy.targetY = enemy.homeY;
+            } else {
+                enemy.targetX = undefined;
+                enemy.targetY = undefined;
+            }
+        }
+
+        // Apply enemy movement if targetX/Y is set
+        if (enemy.targetX !== undefined && enemy.targetY !== undefined) {
+            const dx = enemy.targetX - enemy.x;
+            const dy = enemy.targetY - enemy.y;
+            const distance = Math.hypot(dx, dy);
+            const maxDistance = enemy.speed * deltaSeconds;
+
+            if (distance <= maxDistance || distance < 0.5) {
+                enemy.x = enemy.targetX;
+                enemy.y = enemy.targetY;
+                enemy.targetX = undefined;
+                enemy.targetY = undefined;
+            } else {
+                const ratio = maxDistance / distance;
+                enemy.x += dx * ratio;
+                enemy.y += dy * ratio;
+            }
+        }
+    }
+
     // Also advance respawn logic once per tick
     void updateRespawns();
 }

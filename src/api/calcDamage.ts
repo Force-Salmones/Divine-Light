@@ -43,3 +43,11 @@ export function rollMagicalDamage(attacker: Player, defender: Enemy): number {
     const afterMitigation = applyMitigation(base, defender.resistance);
     return applyRandomVariance(afterMitigation);
 }
+
+// Enemy -> Player damage, using enemy.damage as base
+export function rollEnemyDamage(attacker: Enemy, defender: Player): number {
+    const base = attacker.damage;
+    const mitigation = attacker.damageType === "magical" ? defender.resistance : defender.defense;
+    const afterMitigation = applyMitigation(base, mitigation);
+    return applyRandomVariance(afterMitigation);
+}

@@ -85,6 +85,16 @@ export type Enemy = {
     drops: {};
     x: number;
     y: number;
+    // Home position used for leash / return behavior
+    homeX: number;
+    homeY: number;
+    // The current player this enemy is focused on, if any
+    targetPlayerId?: string | null;
+    // Optional movement target when chasing or returning home
+    targetX?: number;
+    targetY?: number;
+    // Last time this enemy performed an attack (seconds since epoch)
+    lastAttackTime: number;
     sprite: string;
 }
 

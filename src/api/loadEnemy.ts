@@ -32,6 +32,12 @@ export async function loadEnemy(mob: Mob): Promise<Enemy> {
         drops: mobData.drops,
         x: mob.homeX,
         y: mob.homeY,
+        homeX: mob.homeX,
+        homeY: mob.homeY,
+        targetPlayerId: null,
+        targetX: undefined,
+        targetY: undefined,
+        lastAttackTime: 0,
         sprite: `/assets/mobs/${mob.mobId}.png`
     };
     return enemy;

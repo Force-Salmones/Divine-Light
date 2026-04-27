@@ -22,6 +22,9 @@ export function performAttack(playerId: string, enemyId: number): AttackResult |
         return null;
     }
 
+    // Mark this player as the enemy's current target (aggro)
+    enemy.targetPlayerId = player.id;
+
     // Use sprite centers for distance (player 32x32, enemy 24x24)
     const playerCenterX = player.x + 16;
     const playerCenterY = player.y + 16;
