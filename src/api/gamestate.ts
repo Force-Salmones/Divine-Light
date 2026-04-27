@@ -1,3 +1,5 @@
+import { expToLevelUp } from "./gainExperience";
+
 export type AttackEvent = {
     playerId: string;
     enemyId: number;
@@ -34,6 +36,7 @@ export type Player = {
     name: string;
     level: number;
     experience: number;
+    expToNextLevel: number;
     gold: number;
     STR: number;
     VIT: number;
@@ -41,6 +44,7 @@ export type Player = {
     LUK: number;
     INT: number;
     WIS: number;
+    unallocatedPoints: number;
     maxHealth: number;
     currHealth: number;
     maxMana: number;
@@ -95,6 +99,7 @@ export let gameState: GameState = {
         name: "",
         level: 1,
         experience: 0,
+        expToNextLevel: expToLevelUp(1),
         gold: 0,
         STR: 0,
         VIT: 0,
@@ -102,6 +107,7 @@ export let gameState: GameState = {
         LUK: 0,
         INT: 0,
         WIS: 0,
+        unallocatedPoints: 0,
         maxHealth: 0,
         currHealth: 0,
         maxMana: 0,

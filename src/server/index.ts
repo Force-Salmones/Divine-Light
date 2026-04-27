@@ -13,6 +13,8 @@ import { handlerCreateUser } from "../api/handlerCreateUser";
 import { performAttack } from "../api/performAttack";
 import { WebSocketServer } from "ws";
 import { getAllMobs } from "@/db/queries/mobs";
+import { adminChatCommands, type ChatCommandContext } from "./chatCommands";
+import { initChatService, broadcastChatMessage, sendChatToPlayer } from "./chatService";
 
 const app = express();
 
@@ -57,7 +59,8 @@ async function initializeGameState() {
 
     // Back-compat aliases for current client
     gameState.player = player;
-    gameState.selectedTargets[player.id] = null;
+    // Initialize selected target for this player explicitly
+    (gameState.selectedTargets as any)[player.id] = null;
     gameState.selectedEnemyId = null;
 }
 
@@ -70,6 +73,7 @@ async function startServer() {
 
     // Attach WebSocket server for gameplay on the same HTTP server
     wss = new WebSocketServer({ server, path: "/ws" });
+    initChatService(wss);
 
     wss.on("connection", (ws: any, req) => {
         try {
@@ -84,9 +88,54 @@ async function startServer() {
                 try {
                     const msg = JSON.parse(raw.toString());
                     console.log("WS message received:", msg);
-                    const currentPlayerId: string | undefined = (ws as any).playerId ?? gameState.selfId ?? Object.keys(gameState.players)[0];
-                    if (!currentPlayerId) return;
+                    const resolvedPlayerId = (ws as any).playerId ?? gameState.selfId ?? Object.keys(gameState.players)[0];
+                    if (!resolvedPlayerId) return;
+                    const currentPlayerId: string = resolvedPlayerId;
                     switch (msg.type) {
+                        case "chat": {
+                            const { text } = msg as { text?: string };
+                            if (typeof text !== "string" || !text.trim()) {
+                                break;
+                            }
+                            const trimmed = text.trim();
+                            const isAdminCommand = trimmed.startsWith("$");
+
+                            if (isAdminCommand) {
+                                const withoutPrefix = trimmed.slice(1).trim();
+                                const parts = withoutPrefix.split(/\s+/).filter(Boolean);
+                                const commandName = parts[0];
+                                const args = parts.slice(1);
+                                if (!commandName) {
+                                    sendChatToPlayer(currentPlayerId, "No command specified after $", true);
+                                    break;
+                                }
+                                const handler = adminChatCommands[commandName as keyof typeof adminChatCommands] ?? adminChatCommands[commandName as string];
+                                if (!handler) {
+                                    sendChatToPlayer(currentPlayerId, `Unknown command: ${commandName}`, true);
+                                    break;
+                                }
+
+                                const ctx: ChatCommandContext = {
+                                    playerId: currentPlayerId,
+                                    args,
+                                    reply: (message: string) => {
+                                        sendChatToPlayer(currentPlayerId, message, true);
+                                    },
+                                    broadcast: (message: string) => {
+                                        broadcastChatMessage(message, undefined, true);
+                                    },
+                                };
+
+                                void handler(ctx);
+                            } else {
+                                // Normal player chat: broadcast to everyone, using player name if available
+                                const p = gameState.players[currentPlayerId] ?? gameState.player;
+                                const fromName = p?.name ?? currentPlayerId;
+                                broadcastChatMessage(trimmed, fromName, false);
+                            }
+
+                            break;
+                        }
                         case "move": {
                             const { x, y, enemyId } = msg;
                             console.log("WS move", { currentPlayerId, x, y, enemyId });
@@ -134,7 +183,7 @@ async function startServer() {
                             const { enemyId } = msg;
                             console.log("WS attack", { currentPlayerId, enemyId, enemyIdType: typeof enemyId });
                             if (typeof enemyId !== "number") break;
-                            gameState.selectedTargets[currentPlayerId] = enemyId;
+                            (gameState.selectedTargets as any)[currentPlayerId] = enemyId;
                             if (gameState.selfId === currentPlayerId) {
                                 gameState.selectedEnemyId = enemyId;
                             }
@@ -168,7 +217,7 @@ async function startServer() {
                             break;
                         }
                         case "stopAttack": {
-                            gameState.selectedTargets[currentPlayerId] = null;
+                            (gameState.selectedTargets as any)[currentPlayerId] = null;
                             if (gameState.selfId === currentPlayerId) {
                                 gameState.selectedEnemyId = null;
                             }

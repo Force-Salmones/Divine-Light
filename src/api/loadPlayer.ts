@@ -1,6 +1,7 @@
 import type { User } from "../db/schema";
 import type { Player } from "./gamestate";
-import { getUserByEmail, getUserById } from "../db/queries/users";
+import { getUserById } from "../db/queries/users";
+import { expToLevelUp } from "./gainExperience";
 
 export async function loadPlayer(playerId: string): Promise<Player | null> {
     const dbUser: User | undefined = await getUserById(playerId);
@@ -12,6 +13,7 @@ export async function loadPlayer(playerId: string): Promise<Player | null> {
         name: dbUser.name,
         level: dbUser.level,
         experience: dbUser.experience,
+        expToNextLevel: expToLevelUp(dbUser.level),
         gold: dbUser.gold,
         STR: dbUser.baseSTR,
         VIT: dbUser.baseVIT,
@@ -19,6 +21,7 @@ export async function loadPlayer(playerId: string): Promise<Player | null> {
         LUK: dbUser.baseLUK,
         INT: dbUser.baseINT,
         WIS: dbUser.baseWIS,
+        unallocatedPoints: dbUser.unallocatedPoints,
         maxHealth: calcHealth(dbUser),
         currHealth: calcHealth(dbUser),
         maxMana: calcMana(dbUser),

@@ -2,6 +2,19 @@ const canvas = document.getElementById("game") as HTMLCanvasElement;
 const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
 const world = new Image();
 
+// Chat types
+type ChatMessage = {
+    from?: string; // playerId or undefined for system
+    text: string;
+    system?: boolean;
+    timestamp: number;
+};
+
+const chatMessages: ChatMessage[] = [];
+let chatContainer: HTMLDivElement | null = null;
+let chatMessagesDiv: HTMLDivElement | null = null;
+let chatInput: HTMLInputElement | null = null;
+
 // Client-side types (subset mirrored from server for rendering)
 type Player = {
     id: string;
@@ -156,6 +169,27 @@ function sendGameMessage(msg: any) {
     }
 }
 
+function appendChatMessage(message: ChatMessage) {
+    chatMessages.push(message);
+    if (chatMessages.length > 100) {
+        chatMessages.shift();
+    }
+    if (!chatMessagesDiv) return;
+
+    chatMessagesDiv.innerHTML = "";
+    const recent = chatMessages.slice(-30);
+    for (const msg of recent) {
+        const line = document.createElement('div');
+        line.style.fontSize = '12px';
+        line.style.color = msg.system ? '#ffeb3b' : '#ffffff';
+        const time = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const prefix = msg.system ? '[System]' : msg.from ? `[${msg.from}]` : '';
+        line.textContent = `${time} ${prefix} ${msg.text}`.trim();
+        chatMessagesDiv.appendChild(line);
+    }
+    chatMessagesDiv.scrollTop = chatMessagesDiv.scrollHeight;
+}
+
 function startAttackLoop(enemyId: number) {
     // WebSocket: send one attack message; server handles auto-attacks
     stopAttackLoop();
@@ -270,6 +304,14 @@ function connectGameSocket() {
             const data = JSON.parse(event.data);
             if (data.type === 'gameState') {
                 await handleGameStateMessage(data.gameState as GameState);
+            } else if (data.type === 'chat') {
+                const msg: ChatMessage = {
+                    from: typeof data.from === 'string' ? data.from : undefined,
+                    text: String(data.text ?? ''),
+                    system: !!data.system,
+                    timestamp: typeof data.timestamp === 'number' ? data.timestamp : Date.now(),
+                };
+                appendChatMessage(msg);
             }
         } catch (err) {
             console.error('WS message parse error:', err);
@@ -286,6 +328,65 @@ function connectGameSocket() {
 
 world.onload = async () => {
     connectGameSocket();
+
+    // Initialize chat UI
+    const body = document.body;
+    if (body) {
+        // Ensure body can be a positioning context
+        body.style.position = body.style.position || 'relative';
+
+        chatContainer = document.createElement('div');
+        chatContainer.style.position = 'fixed';
+        chatContainer.style.left = '10px';
+        chatContainer.style.bottom = '10px';
+        chatContainer.style.width = '320px';
+        chatContainer.style.maxHeight = '220px';
+        chatContainer.style.display = 'flex';
+        chatContainer.style.flexDirection = 'column';
+        chatContainer.style.background = 'rgba(0, 0, 0, 0.6)';
+        chatContainer.style.border = '1px solid rgba(255, 255, 255, 0.25)';
+        chatContainer.style.borderRadius = '4px';
+        chatContainer.style.padding = '4px';
+        chatContainer.style.boxSizing = 'border-box';
+
+        chatMessagesDiv = document.createElement('div');
+        chatMessagesDiv.style.flex = '1';
+        chatMessagesDiv.style.overflowY = 'auto';
+        chatMessagesDiv.style.marginBottom = '4px';
+        chatMessagesDiv.style.fontFamily = 'sans-serif';
+        chatMessagesDiv.style.fontSize = '12px';
+        chatMessagesDiv.style.color = '#ffffff';
+
+        chatInput = document.createElement('input');
+        chatInput.type = 'text';
+        chatInput.placeholder = 'Type message... ($ for admin command)';
+        chatInput.style.width = '100%';
+        chatInput.style.boxSizing = 'border-box';
+        chatInput.style.border = '1px solid rgba(255, 255, 255, 0.3)';
+        chatInput.style.borderRadius = '3px';
+        chatInput.style.padding = '2px 4px';
+        chatInput.style.background = 'rgba(0, 0, 0, 0.8)';
+        chatInput.style.color = '#ffffff';
+        chatInput.style.fontFamily = 'sans-serif';
+        chatInput.style.fontSize = '12px';
+
+        chatInput.addEventListener('keydown', (ev) => {
+            if (ev.key === 'Enter') {
+                const value = chatInput!.value.trim();
+                if (value) {
+                    sendGameMessage({ type: 'chat', text: value });
+                    chatInput!.value = '';
+                }
+                ev.preventDefault();
+                ev.stopPropagation();
+            }
+        });
+
+        chatContainer.appendChild(chatMessagesDiv);
+        chatContainer.appendChild(chatInput);
+        body.appendChild(chatContainer);
+    }
+
     requestAnimationFrame(gameLoop);
 };
 
