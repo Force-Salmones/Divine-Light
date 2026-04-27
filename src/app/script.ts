@@ -14,6 +14,8 @@ const chatMessages: ChatMessage[] = [];
 let chatContainer: HTMLDivElement | null = null;
 let chatMessagesDiv: HTMLDivElement | null = null;
 let chatInput: HTMLInputElement | null = null;
+let statsButton: HTMLButtonElement | null = null;
+let statsContainer: HTMLDivElement | null = null;
 
 // Client-side types (subset mirrored from server for rendering)
 type Player = {
@@ -26,6 +28,15 @@ type Player = {
     maxHealth: number;
     currMana: number;
     maxMana: number;
+    STR: number;
+    VIT: number;
+    DEX: number;
+    LUK: number;
+    INT: number;
+    WIS: number;
+    unallocatedPoints: number;
+    defense: number;
+    resistance: number;
     x: number;
     y: number;
     sprite: string;
@@ -289,6 +300,15 @@ async function handleGameStateMessage(loadedGameState: GameState) {
             startAttackLoop(enemy.id);
         }
     }
+
+    // If stats panel is open, refresh its values
+    if (statsContainer && statsContainer.style.display !== 'none') {
+        updateStatsPanel();
+    }
+}
+
+function spendStat(stat: 'STR' | 'VIT' | 'DEX' | 'LUK' | 'INT' | 'WIS') {
+    sendGameMessage({ type: 'spendStat', stat });
 }
 
 function connectGameSocket() {
@@ -338,12 +358,13 @@ function connectGameSocket() {
 world.onload = async () => {
     connectGameSocket();
 
-    // Initialize chat UI
+    // Initialize UI overlays
     const body = document.body;
     if (body) {
         // Ensure body can be a positioning context
         body.style.position = body.style.position || 'relative';
 
+        // Chat container (bottom-left)
         chatContainer = document.createElement('div');
         chatContainer.style.position = 'fixed';
         chatContainer.style.left = '10px';
@@ -394,6 +415,50 @@ world.onload = async () => {
         chatContainer.appendChild(chatMessagesDiv);
         chatContainer.appendChild(chatInput);
         body.appendChild(chatContainer);
+
+        // Stats toggle button (near bottom-right of viewport)
+        statsButton = document.createElement('button');
+        statsButton.textContent = 'Stats';
+        statsButton.style.position = 'fixed';
+        statsButton.style.right = '280px';
+        statsButton.style.bottom = '20px';
+        statsButton.style.padding = '4px 8px';
+        statsButton.style.fontSize = '12px';
+        statsButton.style.fontFamily = 'sans-serif';
+        statsButton.style.cursor = 'pointer';
+        statsButton.style.background = 'rgba(0, 0, 0, 0.8)';
+        statsButton.style.color = '#ffffff';
+        statsButton.style.border = '1px solid rgba(255, 255, 255, 0.5)';
+        statsButton.style.borderRadius = '3px';
+
+        statsContainer = document.createElement('div');
+        statsContainer.style.position = 'fixed';
+        statsContainer.style.right = '20px';
+        statsContainer.style.bottom = '120px';
+        statsContainer.style.width = '260px';
+        statsContainer.style.maxHeight = '300px';
+        statsContainer.style.overflowY = 'auto';
+        statsContainer.style.background = 'rgba(0, 0, 0, 0.85)';
+        statsContainer.style.border = '1px solid rgba(255, 255, 255, 0.5)';
+        statsContainer.style.borderRadius = '4px';
+        statsContainer.style.padding = '8px';
+        statsContainer.style.boxSizing = 'border-box';
+        statsContainer.style.fontFamily = 'sans-serif';
+        statsContainer.style.fontSize = '12px';
+        statsContainer.style.color = '#ffffff';
+        statsContainer.style.display = 'none';
+
+        statsButton.addEventListener('click', () => {
+            if (!statsContainer) return;
+            const visible = statsContainer.style.display !== 'none';
+            statsContainer.style.display = visible ? 'none' : 'block';
+            if (!visible) {
+                updateStatsPanel();
+            }
+        });
+
+        body.appendChild(statsButton);
+        body.appendChild(statsContainer);
     }
 
     requestAnimationFrame(gameLoop);
@@ -417,6 +482,77 @@ function gameLoop(timestamp: number) {
 
     // Request the next frame
     requestAnimationFrame(gameLoop);
+}
+
+function updateStatsPanel() {
+    if (!statsContainer || !gameState) return;
+    const p = gameState.player;
+
+    // Clear existing content
+    statsContainer.innerHTML = '';
+
+    const header = document.createElement('div');
+    header.textContent = 'Stats';
+    header.style.fontSize = '14px';
+    header.style.fontWeight = 'bold';
+    header.style.marginBottom = '6px';
+    statsContainer.appendChild(header);
+
+    const makeRow = (label: string, value: string, canSpend: boolean, statKey?: string) => {
+        const row = document.createElement('div');
+        row.style.display = 'flex';
+        row.style.justifyContent = 'space-between';
+        row.style.alignItems = 'center';
+        row.style.marginBottom = '4px';
+
+        const labelSpan = document.createElement('span');
+        labelSpan.textContent = label;
+        const valueSpan = document.createElement('span');
+        valueSpan.textContent = value;
+
+        row.appendChild(labelSpan);
+        row.appendChild(valueSpan);
+
+        if (canSpend && statKey) {
+            const btn = document.createElement('button');
+            btn.textContent = '+';
+            btn.style.marginLeft = '6px';
+            btn.style.padding = '0 4px';
+            btn.style.fontSize = '11px';
+            btn.style.cursor = 'pointer';
+            btn.addEventListener('click', () => {
+                if (!gameState) return;
+                if (gameState.player.unallocatedPoints <= 0) return;
+                spendStat(statKey as any);
+            });
+            row.appendChild(btn);
+        }
+
+        statsContainer!.appendChild(row);
+    };
+
+    // Primary stats with spend buttons
+    makeRow('STR', String(p.STR), true, 'STR');
+    makeRow('VIT', String(p.VIT), true, 'VIT');
+    makeRow('DEX', String(p.DEX), true, 'DEX');
+    makeRow('LUK', String(p.LUK), true, 'LUK');
+    makeRow('INT', String(p.INT), true, 'INT');
+    makeRow('WIS', String(p.WIS), true, 'WIS');
+
+    // Derived stats / combat info
+    const attack = p.STR; // placeholder, real formula not implemented
+    const magicAttack = p.INT; // placeholder
+    makeRow('Attack', String(attack), false);
+    makeRow('Magic Attack', String(magicAttack), false);
+    makeRow('Defense', String(p.defense), false);
+    makeRow('Resistance', String(p.resistance), false);
+    makeRow('Speed', String(p.speed), false);
+    makeRow('Attack Speed', String(p.attackSpeed), false);
+
+    const footer = document.createElement('div');
+    footer.style.marginTop = '8px';
+    footer.textContent = `Unallocated points: ${p.unallocatedPoints}`;
+    statsContainer.appendChild(footer);
 }
 
 function spawnDamageNumber(x: number, y: number, text: string) {

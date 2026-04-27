@@ -223,6 +223,29 @@ async function startServer() {
                             }
                             break;
                         }
+                        case "spendStat": {
+                            const { stat } = msg as { stat?: string };
+                            const player = gameState.players[currentPlayerId] ?? gameState.player;
+                            if (!player) break;
+                            if (typeof stat !== "string") break;
+                            const upper = stat.toUpperCase();
+                            const allowed = ["STR", "VIT", "DEX", "LUK", "INT", "WIS"];
+                            if (!allowed.includes(upper)) {
+                                sendChatToPlayer(currentPlayerId, `Unknown stat: ${stat}`, true);
+                                break;
+                            }
+                            if (player.unallocatedPoints <= 0) {
+                                sendChatToPlayer(currentPlayerId, "No unallocated stat points available.", true);
+                                break;
+                            }
+                            (player as any)[upper] = ((player as any)[upper] ?? 0) + 1;
+                            player.unallocatedPoints -= 1;
+
+                            if (gameState.selfId === currentPlayerId) {
+                                gameState.player = player;
+                            }
+                            break;
+                        }
                         default:
                             break;
                     }
