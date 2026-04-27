@@ -29,7 +29,15 @@ export type GameState = {
         y: number;
         enemyDead: boolean;
     };
+    // Last hit the player received from an enemy (for client UI)
+    lastIncomingHit?: {
+        damage: number;
+        timestamp: number;
+        x: number;
+        y: number;
+    };
 }
+
 
 export type Player = {
     id: string;

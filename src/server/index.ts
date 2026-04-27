@@ -16,6 +16,7 @@ import { getAllMobs } from "@/db/queries/mobs";
 import { adminChatCommands, type ChatCommandContext } from "./chatCommands";
 import { initChatService, broadcastChatMessage, sendChatToPlayer } from "./chatService";
 import { updateUser } from "../db/queries/users";
+import { recalcPlayerDerivedStats } from "../api/recalcPlayerStats";
 
 const app = express();
 
@@ -328,6 +329,9 @@ async function startServer() {
                             }
                             (player as any)[upper] = ((player as any)[upper] ?? 0) + 1;
                             player.unallocatedPoints -= 1;
+
+                            // Recalculate derived stats (HP, MP, defense, resistance)
+                            recalcPlayerDerivedStats(player);
 
                             if (gameState.selfId === currentPlayerId) {
                                 gameState.player = player;

@@ -83,7 +83,15 @@ export function updateServerMovement(deltaSeconds: number) {
                             const damage = rollEnemyDamage(enemy, player);
                             if (damage > 0) {
                                 player.currHealth = Math.max(0, player.currHealth - damage);
-                                // (Optional) log or future event for UI
+                                // Record last incoming hit for the local player so the client can show damage numbers
+                                if (gameState.selfId && player.id === gameState.selfId) {
+                                    gameState.lastIncomingHit = {
+                                        damage,
+                                        timestamp: Date.now(),
+                                        x: player.x,
+                                        y: player.y,
+                                    };
+                                }
                             }
                         }
                     }

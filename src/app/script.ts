@@ -78,6 +78,7 @@ let attackTargetEnemyId: number | null = null;
 let attackIntervalId: number | null = null;
 let gameStatePollId: number | null = null;
 let lastProcessedAttackTimestamp: number = 0;
+let lastProcessedIncomingHitTimestamp: number = 0;
 let hasInitializedAttackHistory = false;
 let gameSocket: WebSocket | null = null;
 const pendingMessages: any[] = []; // queue messages until socket is open
@@ -90,6 +91,7 @@ type DamageNumber = {
     duration: number;
     amplitude: number;
     frequency: number;
+    color: string;
 };
 
 let damageNumbers: DamageNumber[] = [];
@@ -279,17 +281,25 @@ async function handleGameStateMessage(loadedGameState: GameState) {
     gameState = loadedGameState;
     await refreshSpritesIfNeeded();
 
-    // Avoid replaying old attack events on initial load: initialize the lastProcessed
-    // timestamp from the first snapshot without spawning damage numbers.
+    // Avoid replaying old attack events on initial load: initialize baselines
+    // from the first snapshot without spawning damage numbers.
     if (!hasInitializedAttackHistory) {
         if (gameState.lastAttackResult) {
             lastProcessedAttackTimestamp = gameState.lastAttackResult.timestamp;
+        }
+        // lastIncomingHit is only present on the server-side type, so access via any
+        const incomingInit = (gameState as any).lastIncomingHit as
+            | { damage: number; timestamp: number; x: number; y: number }
+            | undefined;
+        if (incomingInit) {
+            lastProcessedIncomingHitTimestamp = incomingInit.timestamp;
         }
         hasInitializedAttackHistory = true;
     } else if (gameState.lastAttackResult && gameState.lastAttackResult.timestamp > lastProcessedAttackTimestamp) {
         lastProcessedAttackTimestamp = gameState.lastAttackResult.timestamp;
         const ar = gameState.lastAttackResult;
-        spawnDamageNumber(ar.x + 12, ar.y, ar.damage.toString());
+        // Player -> enemy damage numbers (white)
+        spawnDamageNumber(ar.x + 12, ar.y, ar.damage.toString(), 'white');
 
         // If the last attack killed the enemy, stop auto-attacking and clear selection.
         // This prevents automatically re-attacking or auto-selecting when the mob respawns.
@@ -299,6 +309,16 @@ async function handleGameStateMessage(loadedGameState: GameState) {
                 selectedEntity = null;
             }
         }
+    }
+
+    // Incoming damage from enemies (if server provides lastIncomingHit)
+    const incoming = (gameState as any).lastIncomingHit as
+        | { damage: number; timestamp: number; x: number; y: number }
+        | undefined;
+    if (incoming && incoming.timestamp > lastProcessedIncomingHitTimestamp) {
+        lastProcessedIncomingHitTimestamp = incoming.timestamp;
+        // Enemy -> player damage numbers (red)
+        spawnDamageNumber(incoming.x + 16, incoming.y, incoming.damage.toString(), 'red');
     }
 
     if (attackTargetEnemyId !== null && gameState) {
@@ -569,7 +589,7 @@ function updateStatsPanel() {
     statsContainer.appendChild(footer);
 }
 
-function spawnDamageNumber(x: number, y: number, text: string) {
+function spawnDamageNumber(x: number, y: number, text: string, color: string = 'white') {
     damageNumbers.push({
         text,
         startX: x,
@@ -577,7 +597,8 @@ function spawnDamageNumber(x: number, y: number, text: string) {
         elapsed: 0,
         duration: 0.9,
         amplitude: 10,
-        frequency: 3
+        frequency: 3,
+        color,
     });
 }
 
@@ -600,7 +621,7 @@ function renderDamageNumbers() {
         ctx.font = '16px sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillStyle = 'white';
+        ctx.fillStyle = damage.color || 'white';
         ctx.strokeStyle = 'rgba(0, 0, 0, 0.65)';
         ctx.lineWidth = 2;
         ctx.strokeText(damage.text, x, y);
