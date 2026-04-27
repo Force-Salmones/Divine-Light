@@ -1,6 +1,7 @@
 import { gameState, type Enemy, type Player } from "./gamestate";
 import { scheduleMobRespawn } from "../server/respawn";
 import { defeatEnemy } from "./defeatEnemy";
+import { rollPhysicalDamage } from "./calcDamage";
 
 export interface AttackResult {
     success: boolean;
@@ -47,9 +48,18 @@ export function performAttack(playerId: string, enemyId: number): AttackResult |
     // Update last attack time
     player.lastAttackTime = now;
 
-    // Deal damage (placeholder; later incorporate stats)
-    const damage = 10;
+    // Deal physical damage based on player stats and enemy defense
+    const damage = rollPhysicalDamage(player, enemy);
     console.log("performAttack: success", { playerId, enemyId, damage, distance });
+    if (damage <= 0) {
+        // No effective damage dealt; still count as an attack event but don't change HP
+        return {
+            success: true,
+            enemyId,
+            enemyHealth: Math.max(0, enemy.currHealth),
+            enemyDead: false
+        };
+    }
     const attackX = enemy.x;
     const attackY = enemy.y;
     enemy.currHealth -= damage;

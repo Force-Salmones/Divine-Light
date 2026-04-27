@@ -540,10 +540,14 @@ function updateStatsPanel() {
     makeRow('WIS', String(p.WIS), true, 'WIS');
 
     // Derived stats / combat info
-    const attack = p.STR; // placeholder, real formula not implemented
-    const magicAttack = p.INT; // placeholder
-    makeRow('Attack', String(attack), false);
-    makeRow('Magic Attack', String(magicAttack), false);
+    const basePhys = 1 + 2 * p.STR + p.DEX;
+    const baseMag = 1 + 2 * p.INT + p.WIS;
+    const attackMin = Math.floor(basePhys * 0.8);
+    const attackMax = Math.ceil(basePhys * 1.2);
+    const magicMin = Math.floor(baseMag * 0.8);
+    const magicMax = Math.ceil(baseMag * 1.2);
+    makeRow('Attack', `${attackMin} - ${attackMax}`, false);
+    makeRow('Magic Attack', `${magicMin} - ${magicMax}`, false);
     makeRow('Defense', String(p.defense), false);
     makeRow('Resistance', String(p.resistance), false);
     makeRow('Speed', String(p.speed), false);
