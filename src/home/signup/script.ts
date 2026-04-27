@@ -1,9 +1,9 @@
-const form = document.querySelector("form") as HTMLFormElement;
+const signupForm = document.querySelector("form") as HTMLFormElement;
 
-form.addEventListener("submit", async (event) => {
+signupForm.addEventListener("submit", async (event) => {
     event.preventDefault();
 
-    const formData = new FormData(form);
+    const formData = new FormData(signupForm);
     const name = formData.get("username") as string;
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
@@ -18,12 +18,12 @@ form.addEventListener("submit", async (event) => {
 
         if (result.success) {
             alert("Account created successfully! You can now log in.");
-            form.reset();
+            signupForm.reset();
         } else {
             alert(`Error: ${result.message}`);
         }
     } catch (error) {
-            console.error("Error creating user:", error);
-            alert("An error occurred while creating your account. Please try again.");
+        console.error("Error creating user:", error);
+        alert("An error occurred while creating your account. Please try again.");
     }
 });

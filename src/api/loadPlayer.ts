@@ -3,7 +3,7 @@ import type { Player } from "./gamestate";
 import { getUserById } from "../db/queries/users";
 import { expToLevelUp } from "./gainExperience";
 
-export async function loadPlayer(playerId: string): Promise<Player | null> {
+export async function loadPlayer(playerId: string): Promise<Player | undefined> {
     const dbUser: User | undefined = await getUserById(playerId);
     if (!dbUser) {
         throw new Error("Player not found");

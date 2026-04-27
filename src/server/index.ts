@@ -1,5 +1,5 @@
 import express from "express";
-import type { Request, Response } from "express";
+import type { Request, Response, NextFunction } from "express";
 import { config } from "../config";
 import { handlerMovePlayer } from "../api/handlerMovePlayer";
 import { handlerAttackEnemy } from "../api/handlerAttackEnemy";
@@ -15,8 +15,11 @@ import { WebSocketServer } from "ws";
 import { getAllMobs } from "@/db/queries/mobs";
 import { adminChatCommands, type ChatCommandContext } from "./chatCommands";
 import { initChatService, broadcastChatMessage, sendChatToPlayer } from "./chatService";
-import { updateUser } from "../db/queries/users";
+import { getUserById, updateUser } from "../db/queries/users";
 import { recalcPlayerDerivedStats } from "../api/recalcPlayerStats";
+import { handlerLogin } from "../api/handlerLogin";
+import { handlerLogout } from "../api/handlerLogout";
+import { validateJWT } from "../auth";
 
 const app = express();
 
@@ -25,6 +28,59 @@ let lastTick = Date.now();
 let wss: WebSocketServer | null = null;
 let httpServer: any = null;
 let shuttingDown = false;
+
+function parseCookies(cookieHeader: string | undefined): Record<string, string> {
+    const out: Record<string, string> = {};
+    if (!cookieHeader) return out;
+    const parts = cookieHeader.split(";");
+    for (const p of parts) {
+        const [k, ...rest] = p.trim().split("=");
+        if (!k) continue;
+        out[k] = decodeURIComponent(rest.join("="));
+    }
+    return out;
+}
+
+function getJwtFromReq(req: Request): string | null {
+    // Prefer cookie (browser + ws), fall back to Authorization header
+    const cookies = parseCookies(req.headers.cookie);
+    if (cookies.jwt) return cookies.jwt;
+
+    const auth = req.get("Authorization");
+    if (auth && auth.startsWith("Bearer ")) {
+        return auth.slice(7);
+    }
+
+    return null;
+}
+
+function requireJwtForApp(req: Request, res: Response, next: NextFunction) {
+    try {
+        const token = getJwtFromReq(req);
+        if (!token) {
+            return res.redirect(302, "/home/");
+        }
+        const userId = validateJWT(token, config.jwt_secret);
+        (req as any).userId = userId;
+        return next();
+    } catch {
+        return res.redirect(302, "/home/");
+    }
+}
+
+function requireJwtForApi(req: Request, res: Response, next: NextFunction) {
+    try {
+        const token = getJwtFromReq(req);
+        if (!token) {
+            return res.status(401).json({ success: false, message: "Unauthorized" });
+        }
+        const userId = validateJWT(token, config.jwt_secret);
+        (req as any).userId = userId;
+        return next();
+    } catch {
+        return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+}
 
 function broadcastGameState() {
     if (!wss) return;
@@ -48,24 +104,11 @@ function startTickLoop() {
 }
 
 async function initializeGameState() {
-    const player = await loadPlayer("536b2e83-2a1a-4b80-b264-d18be01be7c5");
-    if (!player) {
-        throw new Error("Failed to load the default player from the database");
-    }
-
     const dbMobs = await getAllMobs();
     const enemies = await Promise.all(dbMobs.map((mob) => loadEnemy(mob)));
     gameState.enemies = enemies;
 
-    // Initialize multiplayer-aware state
-    gameState.players[player.id] = player;
-    gameState.selfId = player.id; // dev only; single session controls this player
-
-    // Back-compat aliases for current client
-    gameState.player = player;
-    // Initialize selected target for this player explicitly
-    (gameState.selectedTargets as any)[player.id] = null;
-    gameState.selectedEnemyId = null;
+    // Players are now loaded on-demand from JWT on websocket connection.
 }
 
 async function persistPlayer(playerId: string) {
@@ -151,12 +194,49 @@ async function startServer() {
     wss = new WebSocketServer({ server, path: "/ws" });
     initChatService(wss);
 
-    wss.on("connection", (ws: any, req) => {
+    wss.on("connection", async (ws: any, req: any) => {
         try {
-            const url = new URL(req.url ?? "/ws", `http://${req.headers.host}`);
-            const qpPlayerId = url.searchParams.get("playerId") ?? undefined;
-            const playerId = qpPlayerId ?? gameState.selfId ?? Object.keys(gameState.players)[0];
-            (ws as any).playerId = playerId;
+            // Authenticate using JWT (cookie preferred)
+            const token = getJwtFromReq(req as Request);
+            if (!token) {
+                ws.close(1008, "Unauthorized");
+                return;
+            }
+
+            let userId: string;
+            try {
+                userId = validateJWT(token, config.jwt_secret);
+            } catch {
+                ws.close(1008, "Unauthorized");
+                return;
+            }
+
+            const dbUser = await getUserById(userId);
+            if (!dbUser) {
+                ws.close(1008, "Unauthorized");
+                return;
+            }
+
+            // Load or reuse player
+            let player = gameState.players[userId];
+            if (!player) {
+                player = await loadPlayer(userId);
+                if (!player) {
+                    ws.close(1011, "Failed to load player");
+                    return;
+                }
+                gameState.players[player.id] = player;
+                (gameState.selectedTargets as any)[player.id] = null;
+            }
+
+            // For the current single-client UI, keep aliases pointing at the current user.
+            // (If/when you support multiple concurrent clients, you should send a per-client snapshot instead.)
+            gameState.selfId = player.id;
+            gameState.player = player;
+            gameState.selectedEnemyId = (gameState.selectedTargets as any)[player.id] ?? null;
+
+            (ws as any).playerId = player.id;
+
             // Send initial snapshot
             ws.send(JSON.stringify({ type: "gameState", gameState }));
 
@@ -171,7 +251,7 @@ async function startServer() {
                 try {
                     const msg = JSON.parse(raw.toString());
                     console.log("WS message received:", msg);
-                    const resolvedPlayerId = (ws as any).playerId ?? gameState.selfId ?? Object.keys(gameState.players)[0];
+                    const resolvedPlayerId = (ws as any).playerId;
                     if (!resolvedPlayerId) return;
                     const currentPlayerId: string = resolvedPlayerId;
                     switch (msg.type) {
@@ -359,26 +439,46 @@ app.get("/api/health", (req: Request, res: Response) => {
     res.send("ok");
 });
 
-app.get("/api/game-state", (req: Request, res: Response) => {
-    res.json({
-        gameState
-    });
+app.get("/api/game-state", requireJwtForApi, (req: Request, res: Response) => {
+    const userId = (req as any).userId as string;
+    const player = gameState.players[userId];
+    if (player) {
+        // Back-compat aliases for current client
+        gameState.selfId = player.id;
+        gameState.player = player;
+        gameState.selectedEnemyId = (gameState.selectedTargets as any)[player.id] ?? null;
+    }
+    res.json({ gameState });
 });
 
 app.post("/api/create-user", handlerCreateUser);
 
-app.post("/api/move-player", handlerMovePlayer);
+app.post("/api/login", handlerLogin);
+app.post("/api/logout", handlerLogout);
 
-app.post("/api/attack-enemy", handlerAttackEnemy);
+// Legacy HTTP gameplay endpoints (kept for compatibility)
+app.post("/api/move-player", requireJwtForApi, handlerMovePlayer);
+app.post("/api/attack-enemy", requireJwtForApi, handlerAttackEnemy);
 
-app.use("/app", express.static("./public/app"));
+// Require auth to load the game client
+app.use("/app", requireJwtForApp, express.static("./public/app"));
 app.use("/home", express.static("./public/home"));
 app.use("/signup", express.static("./public/home/signup"));
+app.use("/login", express.static("./public/home/auth"));
 app.use("/assets", express.static("./assets"));
 
-// For convenience, redirect root to /app (serves index.html)
+// For convenience, redirect root to /app if logged in, otherwise /home
 app.get("/", (req: Request, res: Response) => {
-    res.redirect(302, "/app/");
+    try {
+        const token = getJwtFromReq(req);
+        if (!token) {
+            return res.redirect(302, "/home/");
+        }
+        validateJWT(token, config.jwt_secret);
+        return res.redirect(302, "/app/");
+    } catch {
+        return res.redirect(302, "/home/");
+    }
 });
 
 void startServer().catch((error) => {
