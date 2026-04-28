@@ -2,6 +2,64 @@ const canvas = document.getElementById("game") as HTMLCanvasElement;
 const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
 const world = new Image();
 
+// Keep the game world's coordinate system stable (world units), regardless of screen size.
+// We render the world with a view transform (scale + letterbox offset).
+let worldWidth = 1536;
+let worldHeight = 864;
+
+let dpr = window.devicePixelRatio || 1;
+let canvasCssWidth = window.innerWidth;
+let canvasCssHeight = window.innerHeight;
+
+// World -> screen transform (in CSS pixels)
+let viewScale = 1;
+let viewOffsetX = 0;
+let viewOffsetY = 0;
+
+function updateViewTransform() {
+    viewScale = Math.min(canvasCssWidth / worldWidth, canvasCssHeight / worldHeight);
+    viewOffsetX = (canvasCssWidth - worldWidth * viewScale) / 2;
+    viewOffsetY = (canvasCssHeight - worldHeight * viewScale) / 2;
+}
+
+function setWorldTransform() {
+    // World coords in "world units"; scale/offset to viewport; include DPR for crispness.
+    ctx.setTransform(viewScale * dpr, 0, 0, viewScale * dpr, viewOffsetX * dpr, viewOffsetY * dpr);
+}
+
+function setUiTransform() {
+    // UI coords in CSS pixels; include DPR for crispness.
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+function resizeCanvasToScreen() {
+    dpr = window.devicePixelRatio || 1;
+    canvasCssWidth = window.innerWidth;
+    canvasCssHeight = window.innerHeight;
+
+    // Make the canvas match the viewport size.
+    canvas.style.position = 'fixed';
+    canvas.style.left = '0';
+    canvas.style.top = '0';
+    canvas.style.width = `${canvasCssWidth}px`;
+    canvas.style.height = `${canvasCssHeight}px`;
+
+    canvas.width = Math.floor(canvasCssWidth * dpr);
+    canvas.height = Math.floor(canvasCssHeight * dpr);
+
+    updateViewTransform();
+}
+
+function screenToWorld(clientX: number, clientY: number) {
+    const rect = canvas.getBoundingClientRect();
+    const sx = clientX - rect.left;
+    const sy = clientY - rect.top;
+
+    const wx = (sx - viewOffsetX) / viewScale;
+    const wy = (sy - viewOffsetY) / viewScale;
+    return { x: wx, y: wy };
+}
+
 // Chat types
 type ChatMessage = {
     from?: string; // playerId or undefined for system
@@ -571,6 +629,17 @@ function connectGameSocket() {
 }
 
 world.onload = async () => {
+    // Use actual world image size if available
+    if (world.naturalWidth && world.naturalHeight) {
+        worldWidth = world.naturalWidth;
+        worldHeight = world.naturalHeight;
+    }
+
+    resizeCanvasToScreen();
+    window.addEventListener('resize', () => {
+        resizeCanvasToScreen();
+    });
+
     connectGameSocket();
 
     // Initialize UI overlays
@@ -733,9 +802,6 @@ function gameLoop(timestamp: number) {
     lastTime = timestamp;
 
     updateDamageNumbers(deltaTime);
-
-    // Clear the canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Render everything
     render();
@@ -914,8 +980,20 @@ function renderDamageNumbers() {
 function render() {
     if (!gameState) return;
 
-    // Draw the world background
-    ctx.drawImage(world, 0, 0, canvas.width, canvas.height);
+    // Clear (device pixels)
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Fill letterbox area
+    setUiTransform();
+    ctx.fillStyle = 'black';
+    ctx.fillRect(0, 0, canvasCssWidth, canvasCssHeight);
+
+    // --- World space ---
+    setWorldTransform();
+
+    // Draw the world background in world coordinates
+    ctx.drawImage(world, 0, 0, worldWidth, worldHeight);
 
     const showAttackRange =
         selectedEntity?.type === 'enemy' ||
@@ -982,6 +1060,9 @@ function render() {
 
     renderDamageNumbers();
 
+    // --- UI space ---
+    setUiTransform();
+
     // Enemy/player info panel (top-left)
     if (selectedEntity && selectedEntity.type === 'enemy') {
         const selectedEnemyId = selectedEntity.id;
@@ -1007,8 +1088,8 @@ function drawPlayerInfoPanel() {
 
     const panelWidth = 260;
     const panelHeight = 90;
-    const panelX = canvas.width - panelWidth - 10;
-    const panelY = canvas.height - panelHeight - 10;
+    const panelX = canvasCssWidth - panelWidth - 10;
+    const panelY = canvasCssHeight - panelHeight - 10;
 
     ctx.save();
     ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
@@ -1045,9 +1126,14 @@ async function movePlayer(x?: number, y?: number, enemyId?: number) {
 }
 
 canvas.addEventListener('click', (event) => {
-    const rect = canvas.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
+    const pt = screenToWorld(event.clientX, event.clientY);
+    if (pt.x < 0 || pt.y < 0 || pt.x > worldWidth || pt.y > worldHeight) {
+        // Clicked outside the world (letterboxed area)
+        return;
+    }
+
+    const x = pt.x;
+    const y = pt.y;
 
     const hit = getEntityAt(x, y);
     if (hit?.type === 'enemy' && gameState) {
