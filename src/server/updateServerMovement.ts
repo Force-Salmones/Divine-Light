@@ -24,10 +24,6 @@ export function updateServerMovement(deltaSeconds: number) {
             player.y += dy * ratio;
         }
 
-        // Keep alias updated for self
-        if (gameState.selfId && gameState.selfId === playerId) {
-            gameState.player = player;
-        }
     }
     // Enemy AI: movement + attacks
     const LEASH_DISTANCE = 300;
@@ -83,15 +79,13 @@ export function updateServerMovement(deltaSeconds: number) {
                             const damage = rollEnemyDamage(enemy, player);
                             if (damage > 0) {
                                 player.currHealth = Math.max(0, player.currHealth - damage);
-                                // Record last incoming hit for the local player so the client can show damage numbers
-                                if (gameState.selfId && player.id === gameState.selfId) {
-                                    gameState.lastIncomingHit = {
-                                        damage,
-                                        timestamp: Date.now(),
-                                        x: player.x,
-                                        y: player.y,
-                                    };
-                                }
+                                // Record last incoming hit for THIS player so their own client can show damage numbers
+                                player.lastIncomingHit = {
+                                    damage,
+                                    timestamp: Date.now(),
+                                    x: player.x,
+                                    y: player.y,
+                                };
                             }
                         }
                     }

@@ -17,7 +17,7 @@ export function performAttack(playerId: string, enemyId: number): AttackResult |
         return null;
     }
 
-    const player: Player | undefined = gameState.players[playerId] ?? gameState.player;
+    const player: Player | undefined = gameState.players[playerId];
     if (!player) {
         return null;
     }
@@ -37,8 +37,10 @@ export function performAttack(playerId: string, enemyId: number): AttackResult |
         return null;
     }
 
+    const nowMs = Date.now();
+
     // Check attack cooldown
-    const now = Date.now() / 1000; // Convert to seconds
+    const now = nowMs / 1000; // seconds
     const timeSinceLastAttack = now - player.lastAttackTime;
     if (timeSinceLastAttack < player.attackSpeed) {
         console.log("performAttack: on cooldown", { playerId, enemyId, timeSinceLastAttack, attackSpeed: player.attackSpeed });
@@ -54,40 +56,42 @@ export function performAttack(playerId: string, enemyId: number): AttackResult |
     // Deal physical damage based on player stats and enemy defense
     const damage = rollPhysicalDamage(player, enemy);
     console.log("performAttack: success", { playerId, enemyId, damage, distance });
-    if (damage <= 0) {
-        // No effective damage dealt; still count as an attack event but don't change HP
-        return {
-            success: true,
-            enemyId,
-            enemyHealth: Math.max(0, enemy.currHealth),
-            enemyDead: false
-        };
-    }
+
     const attackX = enemy.x;
     const attackY = enemy.y;
-    enemy.currHealth -= damage;
+
+    if (damage > 0) {
+        enemy.currHealth -= damage;
+    }
     const enemyDead = enemy.currHealth <= 0;
 
-    // Log event for multiplayer
+    // Record per-player event (so multiple concurrent clients don't stomp each other)
+    player.lastAttackResult = {
+        enemyId,
+        damage,
+        timestamp: nowMs,
+        x: attackX,
+        y: attackY,
+        enemyDead,
+    };
+
+    // Log event for multiplayer / debugging
     gameState.lastAttackEvents.push({
         playerId,
         enemyId,
         damage,
-        timestamp: Date.now(),
+        timestamp: nowMs,
         x: attackX,
         y: attackY,
-        enemyDead
+        enemyDead,
     });
 
-    // Back-compat for current client: mirror last event for selfId
-    if (gameState.selfId && gameState.selfId === playerId) {
-        gameState.lastAttackResult = {
+    if (damage <= 0) {
+        return {
+            success: true,
             enemyId,
-            damage,
-            timestamp: Date.now(),
-            x: attackX,
-            y: attackY,
-            enemyDead
+            enemyHealth: Math.max(0, enemy.currHealth),
+            enemyDead: false,
         };
     }
 
@@ -108,10 +112,6 @@ export function performAttack(playerId: string, enemyId: number): AttackResult |
                 gameState.selectedTargets[pid] = null;
             }
         });
-        // Back-compat alias
-        if (gameState.selfId && gameState.selectedEnemyId === enemyId) {
-            gameState.selectedEnemyId = null;
-        }
         // Schedule respawn
         try {
             scheduleMobRespawn(enemy);
@@ -119,14 +119,6 @@ export function performAttack(playerId: string, enemyId: number): AttackResult |
             console.error("Failed to schedule mob respawn:", err);
         }
         // TODO: call defeatEnemy(playerId, enemy.mobId)
-    }
-
-    // Keep alias player reference updated if needed
-    if (gameState.selfId) {
-        const selfPlayer = gameState.players[gameState.selfId];
-        if (selfPlayer) {
-            gameState.player = selfPlayer;
-        }
     }
 
     return {

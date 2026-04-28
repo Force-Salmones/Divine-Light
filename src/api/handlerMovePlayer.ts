@@ -1,15 +1,17 @@
 import { gameState, type Player, type Enemy } from "./gamestate";
 import type { Request, Response, NextFunction } from "express";
+import { makeGameStateSnapshot } from "./makeSnapshot";
 
 export async function handlerMovePlayer(req: Request, res: Response, next: NextFunction) {
-    const { x, y, enemyId, playerId } = req.body as { x?: number; y?: number; enemyId?: number; playerId?: string };
+    const { x, y, enemyId } = req.body as { x?: number; y?: number; enemyId?: number };
 
-    const resolvedPlayerId: string | undefined = playerId ?? gameState.selfId ?? Object.keys(gameState.players)[0];
+    // Prefer authenticated playerId (set by requireJwtForApi). Fall back to request body for older/dev callers.
+    const resolvedPlayerId: string | undefined = (req as any).userId ?? (req.body as any).playerId;
     if (!resolvedPlayerId) {
-        return res.status(400).json({ success: false, message: "No player available" });
+        return res.status(400).json({ success: false, message: "No playerId provided" });
     }
 
-    const player: Player | undefined = gameState.players[resolvedPlayerId] ?? gameState.player;
+    const player: Player | undefined = gameState.players[resolvedPlayerId];
     if (!player) {
         return res.status(404).json({ success: false, message: "Player not found" });
     }
@@ -33,11 +35,7 @@ export async function handlerMovePlayer(req: Request, res: Response, next: NextF
         if (distance <= player.attackRange) {
             delete player.targetX;
             delete player.targetY;
-            // Back-compat alias update
-            if (gameState.selfId === resolvedPlayerId) {
-                gameState.player = player;
-            }
-            return res.json({ success: true, message: "Already in attack range", gameState });
+            return res.json({ success: true, message: "Already in attack range", gameState: makeGameStateSnapshot(resolvedPlayerId) });
         }
 
         // Move slightly inside the range to avoid stopping just outside
@@ -47,10 +45,7 @@ export async function handlerMovePlayer(req: Request, res: Response, next: NextF
             // Edge case: already overlapping; just clear movement
             delete player.targetX;
             delete player.targetY;
-            if (gameState.selfId === resolvedPlayerId) {
-                gameState.player = player;
-            }
-            return res.json({ success: true, gameState });
+            return res.json({ success: true, gameState: makeGameStateSnapshot(resolvedPlayerId) });
         }
 
         const ratio = (distance - desiredDistance) / distance;
@@ -60,21 +55,13 @@ export async function handlerMovePlayer(req: Request, res: Response, next: NextF
         // Convert back to top-left for movement system
         player.targetX = targetCenterX - 16;
         player.targetY = targetCenterY - 16;
-        // Back-compat alias update
-        if (gameState.selfId === resolvedPlayerId) {
-            gameState.player = player;
-        }
-        return res.json({ success: true, gameState });
+        return res.json({ success: true, gameState: makeGameStateSnapshot(resolvedPlayerId) });
     }
 
     if (typeof x === "number" && typeof y === "number") {
         player.targetX = x;
         player.targetY = y;
-        // Back-compat alias update
-        if (gameState.selfId === resolvedPlayerId) {
-            gameState.player = player;
-        }
-        return res.json({ success: true, gameState });
+        return res.json({ success: true, gameState: makeGameStateSnapshot(resolvedPlayerId) });
     }
 
     return res.status(400).json({ success: false, message: "Invalid move request" });

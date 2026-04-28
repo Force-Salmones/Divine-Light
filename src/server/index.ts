@@ -5,6 +5,7 @@ import { handlerMovePlayer } from "../api/handlerMovePlayer";
 import { handlerAttackEnemy } from "../api/handlerAttackEnemy";
 import { updateServerMovement, updateAutomaticAttack } from "./updateServerMovement";
 import { gameState } from "../api/gamestate";
+import { makeGameStateSnapshot } from "../api/makeSnapshot";
 
 import { loadPlayer } from "../api/loadPlayer";
 import { loadEnemy } from "../api/loadEnemy";
@@ -28,6 +29,9 @@ let lastTick = Date.now();
 let wss: WebSocketServer | null = null;
 let httpServer: any = null;
 let shuttingDown = false;
+
+// Tracks the active WS connection per playerId (prevents two tabs controlling the same character)
+const wsByPlayerId = new Map<string, any>();
 
 function parseCookies(cookieHeader: string | undefined): Record<string, string> {
     const out: Record<string, string> = {};
@@ -84,10 +88,17 @@ function requireJwtForApi(req: Request, res: Response, next: NextFunction) {
 
 function broadcastGameState() {
     if (!wss) return;
-    const payload = JSON.stringify({ type: "gameState", gameState });
+
+    // IMPORTANT: we must send a per-client snapshot (selfId/player/selectedEnemyId/etc differ per client)
     wss.clients.forEach((client: any) => {
-        if (client.readyState === 1) {
-            client.send(payload);
+        try {
+            if (client.readyState !== 1) return;
+            const pid: string | undefined = client.playerId;
+            if (!pid) return;
+            const snapshot = makeGameStateSnapshot(pid);
+            client.send(JSON.stringify({ type: "gameState", gameState: snapshot }));
+        } catch (err) {
+            console.error("Failed to broadcast snapshot", err);
         }
     });
 }
@@ -226,23 +237,38 @@ async function startServer() {
                     return;
                 }
                 gameState.players[player.id] = player;
-                (gameState.selectedTargets as any)[player.id] = null;
+                gameState.selectedTargets[player.id] = null;
             }
 
-            // For the current single-client UI, keep aliases pointing at the current user.
-            // (If/when you support multiple concurrent clients, you should send a per-client snapshot instead.)
-            gameState.selfId = player.id;
-            gameState.player = player;
-            gameState.selectedEnemyId = (gameState.selectedTargets as any)[player.id] ?? null;
+            // Only allow one active WS per playerId (prevents multi-tab fights over the same character)
+            const existing = wsByPlayerId.get(player.id);
+            if (existing && existing !== ws) {
+                try {
+                    existing.close(4000, "Logged in elsewhere");
+                } catch {}
+            }
+            wsByPlayerId.set(player.id, ws);
 
             (ws as any).playerId = player.id;
 
-            // Send initial snapshot
-            ws.send(JSON.stringify({ type: "gameState", gameState }));
+            // Send initial per-client snapshot
+            ws.send(JSON.stringify({ type: "gameState", gameState: makeGameStateSnapshot(player.id) }));
 
             ws.on("close", () => {
                 const pid: string | undefined = (ws as any).playerId;
-                if (pid) {
+                if (!pid) return;
+
+                // Only clean up if THIS ws is still the active one for the playerId
+                if (wsByPlayerId.get(pid) === ws) {
+                    wsByPlayerId.delete(pid);
+
+                    void persistPlayer(pid);
+
+                    // Remove player from the in-memory world on disconnect
+                    delete gameState.players[pid];
+                    delete gameState.selectedTargets[pid];
+                } else {
+                    // Replaced by a newer connection; don't delete state
                     void persistPlayer(pid);
                 }
             });
@@ -298,7 +324,7 @@ async function startServer() {
                                 void handler(ctx);
                             } else {
                                 // Normal player chat: broadcast to everyone, using player name if available
-                                const p = gameState.players[currentPlayerId] ?? gameState.player;
+                                const p = gameState.players[currentPlayerId];
                                 const fromName = p?.name ?? currentPlayerId;
                                 broadcastChatMessage(trimmed, fromName, false);
                             }
@@ -308,7 +334,7 @@ async function startServer() {
                         case "move": {
                             const { x, y, enemyId } = msg;
                             console.log("WS move", { currentPlayerId, x, y, enemyId });
-                            const player = gameState.players[currentPlayerId] ?? gameState.player;
+                            const player = gameState.players[currentPlayerId];
                             if (!player) break;
                             if (typeof enemyId === "number") {
                                 // Move toward enemy slightly inside attack range
@@ -342,22 +368,16 @@ async function startServer() {
                                 player.targetX = x;
                                 player.targetY = y;
                             }
-                            // Keep alias updated
-                            if (gameState.selfId && gameState.selfId === currentPlayerId) {
-                                gameState.player = player;
-                            }
                             break;
                         }
                         case "attack": {
                             const { enemyId } = msg;
                             console.log("WS attack", { currentPlayerId, enemyId, enemyIdType: typeof enemyId });
                             if (typeof enemyId !== "number") break;
-                            (gameState.selectedTargets as any)[currentPlayerId] = enemyId;
-                            if (gameState.selfId === currentPlayerId) {
-                                gameState.selectedEnemyId = enemyId;
-                            }
+                            gameState.selectedTargets[currentPlayerId] = enemyId;
+
                             // If out of range, also set a movement target toward the enemy
-                            const player = gameState.players[currentPlayerId] ?? gameState.player;
+                            const player = gameState.players[currentPlayerId];
                             const enemy = gameState.enemies.find(e => e.id === enemyId);
                             console.log("WS attack handler", { currentPlayerId, enemyId, hasPlayer: !!player, hasEnemy: !!enemy });
                             if (player && enemy) {
@@ -376,9 +396,6 @@ async function startServer() {
                                     const targetCenterY = playerCenterY + dy * ratio;
                                     player.targetX = targetCenterX - 16;
                                     player.targetY = targetCenterY - 16;
-                                    if (gameState.selfId && gameState.selfId === currentPlayerId) {
-                                        gameState.player = player;
-                                    }
                                 }
                             }
                             // Try an immediate attack; subsequent hits handled by server loop
@@ -386,15 +403,12 @@ async function startServer() {
                             break;
                         }
                         case "stopAttack": {
-                            (gameState.selectedTargets as any)[currentPlayerId] = null;
-                            if (gameState.selfId === currentPlayerId) {
-                                gameState.selectedEnemyId = null;
-                            }
+                            gameState.selectedTargets[currentPlayerId] = null;
                             break;
                         }
                         case "spendStat": {
                             const { stat } = msg as { stat?: string };
-                            const player = gameState.players[currentPlayerId] ?? gameState.player;
+                            const player = gameState.players[currentPlayerId];
                             if (!player) break;
                             if (typeof stat !== "string") break;
                             const upper = stat.toUpperCase();
@@ -413,9 +427,6 @@ async function startServer() {
                             // Recalculate derived stats (HP, MP, defense, resistance)
                             recalcPlayerDerivedStats(player);
 
-                            if (gameState.selfId === currentPlayerId) {
-                                gameState.player = player;
-                            }
                             break;
                         }
                         default:
@@ -439,16 +450,24 @@ app.get("/api/health", (req: Request, res: Response) => {
     res.send("ok");
 });
 
-app.get("/api/game-state", requireJwtForApi, (req: Request, res: Response) => {
+app.get("/api/game-state", requireJwtForApi, async (req: Request, res: Response) => {
     const userId = (req as any).userId as string;
-    const player = gameState.players[userId];
-    if (player) {
-        // Back-compat aliases for current client
-        gameState.selfId = player.id;
-        gameState.player = player;
-        gameState.selectedEnemyId = (gameState.selectedTargets as any)[player.id] ?? null;
+
+    // Ensure player is loaded (supports refreshing the page without a WS connection yet)
+    let player = gameState.players[userId];
+    if (!player) {
+        player = await loadPlayer(userId);
+        if (player) {
+            gameState.players[userId] = player;
+            gameState.selectedTargets[userId] = null;
+        }
     }
-    res.json({ gameState });
+
+    if (!player) {
+        return res.status(404).json({ success: false, message: "Player not found" });
+    }
+
+    return res.json({ gameState: makeGameStateSnapshot(userId) });
 });
 
 app.post("/api/create-user", handlerCreateUser);

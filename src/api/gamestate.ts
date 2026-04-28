@@ -1,5 +1,3 @@
-import { expToLevelUp } from "./gainExperience";
-
 export type AttackEvent = {
     playerId: string;
     enemyId: number;
@@ -10,34 +8,39 @@ export type AttackEvent = {
     enemyDead: boolean;
 };
 
-export type GameState = {
-    // Multiplayer primary fields
+export type AttackResult = {
+    enemyId: number;
+    damage: number;
+    timestamp: number;
+    x: number;
+    y: number;
+    enemyDead: boolean;
+};
+
+export type IncomingHit = {
+    damage: number;
+    timestamp: number;
+    x: number;
+    y: number;
+};
+
+// Authoritative server-side state (shared across all clients)
+export type ServerGameState = {
     players: Record<string, Player>;
     enemies: Enemy[];
     selectedTargets: Record<string, number | null>; // per-player selected enemy
     lastAttackEvents: AttackEvent[]; // log of recent attack events
-    selfId?: string; // the playerId for this session (dev only for now)
+};
 
-    // Backward-compatibility aliases for current client
-    player: Player; // alias to players[selfId]
-    selectedEnemyId: number | null; // alias to selectedTargets[selfId]
-    lastAttackResult?: {
-        enemyId: number;
-        damage: number;
-        timestamp: number;
-        x: number;
-        y: number;
-        enemyDead: boolean;
-    };
-    // Last hit the player received from an enemy (for client UI)
-    lastIncomingHit?: {
-        damage: number;
-        timestamp: number;
-        x: number;
-        y: number;
-    };
-}
-
+// Per-client snapshot sent over WS / HTTP.
+// Includes backward-compat fields (player, selectedEnemyId, etc) derived from the authoritative state.
+export type GameStateSnapshot = ServerGameState & {
+    selfId: string;
+    player: Player;
+    selectedEnemyId: number | null;
+    lastAttackResult?: AttackResult;
+    lastIncomingHit?: IncomingHit;
+};
 
 export type Player = {
     id: string;
@@ -69,6 +72,10 @@ export type Player = {
     targetX?: number;
     targetY?: number;
     inventory: {};
+
+    // Per-player UI events (so multiple concurrent clients don't stomp each other)
+    lastAttackResult?: AttackResult;
+    lastIncomingHit?: IncomingHit;
 }
 
 export type Enemy = {
@@ -106,41 +113,9 @@ export type Enemy = {
     sprite: string;
 }
 
-export let gameState: GameState = {
+export const gameState: ServerGameState = {
     players: {},
     enemies: [],
     selectedTargets: {},
     lastAttackEvents: [],
-    selfId: undefined,
-    // Backward compatibility defaults
-    player: {
-        id: "",
-        name: "",
-        level: 1,
-        experience: 0,
-        expToNextLevel: expToLevelUp(1),
-        gold: 0,
-        STR: 0,
-        VIT: 0,
-        DEX: 0,
-        LUK: 0,
-        INT: 0,
-        WIS: 0,
-        unallocatedPoints: 0,
-        maxHealth: 0,
-        currHealth: 0,
-        maxMana: 0,
-        currMana: 0,
-        defense: 0,
-        resistance: 0,
-        x: 0,
-        y: 0,
-        sprite: "/assets/player-temp.png",
-        speed: 120,
-        attackRange: 48,
-        attackSpeed: 1,
-        lastAttackTime: 0,
-        inventory: {}
-    },
-    selectedEnemyId: null
 };

@@ -58,9 +58,16 @@ type Enemy = {
 };
 
 type GameState = {
-    player: Player;
+    // authoritative fields
+    players: Record<string, Player>;
     enemies: Enemy[];
+    selectedTargets?: Record<string, number | null>;
+
+    // per-client fields
+    selfId: string;
+    player: Player;
     selectedEnemyId: number | null;
+
     lastAttackResult?: {
         enemyId: number;
         damage: number;
@@ -68,6 +75,12 @@ type GameState = {
         x: number;
         y: number;
         enemyDead: boolean;
+    };
+    lastIncomingHit?: {
+        damage: number;
+        timestamp: number;
+        x: number;
+        y: number;
     };
 }
 
@@ -269,7 +282,11 @@ async function refreshSpritesIfNeeded() {
     if (!gameState) return;
 
     const spriteUrls = new Set<string>();
+    // local player
     spriteUrls.add(gameState.player.sprite);
+    // other players
+    Object.values(gameState.players ?? {}).forEach(p => spriteUrls.add(p.sprite));
+    // enemies
     gameState.enemies.forEach(enemy => spriteUrls.add(enemy.sprite));
 
     const missing = Array.from(spriteUrls).filter(url => !sprites.has(url));
@@ -304,12 +321,8 @@ async function handleGameStateMessage(loadedGameState: GameState) {
         if (gameState.lastAttackResult) {
             lastProcessedAttackTimestamp = gameState.lastAttackResult.timestamp;
         }
-        // lastIncomingHit is only present on the server-side type, so access via any
-        const incomingInit = (gameState as any).lastIncomingHit as
-            | { damage: number; timestamp: number; x: number; y: number }
-            | undefined;
-        if (incomingInit) {
-            lastProcessedIncomingHitTimestamp = incomingInit.timestamp;
+        if (gameState.lastIncomingHit) {
+            lastProcessedIncomingHitTimestamp = gameState.lastIncomingHit.timestamp;
         }
         hasInitializedAttackHistory = true;
     } else if (gameState.lastAttackResult && gameState.lastAttackResult.timestamp > lastProcessedAttackTimestamp) {
@@ -328,10 +341,8 @@ async function handleGameStateMessage(loadedGameState: GameState) {
         }
     }
 
-    // Incoming damage from enemies (if server provides lastIncomingHit)
-    const incoming = (gameState as any).lastIncomingHit as
-        | { damage: number; timestamp: number; x: number; y: number }
-        | undefined;
+    // Incoming damage from enemies
+    const incoming = gameState.lastIncomingHit;
     if (incoming && incoming.timestamp > lastProcessedIncomingHitTimestamp) {
         lastProcessedIncomingHitTimestamp = incoming.timestamp;
         // Enemy -> player damage numbers (red)
@@ -658,7 +669,24 @@ function render() {
         drawAttackRangeCircle(gameState.player.attackRange);
     }
 
-    // Draw player
+    // Draw other players first (so local player is on top)
+    for (const p of Object.values(gameState.players ?? {})) {
+        if (p.id === gameState.selfId) continue;
+
+        const img = sprites.get(p.sprite);
+        if (img) {
+            ctx.drawImage(img, p.x, p.y, 32, 32);
+        } else {
+            ctx.fillStyle = 'rgba(0, 140, 255, 0.65)';
+            ctx.fillRect(p.x, p.y, 32, 32);
+        }
+
+        if (p.name) {
+            drawNameTag(p.x, p.y, 32, p.name);
+        }
+    }
+
+    // Draw local player
     const playerImg = sprites.get(gameState.player.sprite);
     if (playerImg) {
         ctx.drawImage(playerImg, gameState.player.x, gameState.player.y, 32, 32);
@@ -667,7 +695,7 @@ function render() {
         ctx.fillRect(gameState.player.x, gameState.player.y, 32, 32);
     }
 
-    // Name tag above player
+    // Name tag above local player
     if (gameState.player.name) {
         drawNameTag(gameState.player.x, gameState.player.y, 32, gameState.player.name);
     }
