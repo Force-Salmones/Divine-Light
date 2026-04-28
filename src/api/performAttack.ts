@@ -86,6 +86,12 @@ export function performAttack(playerId: string, enemyId: number): AttackResult |
         enemyDead,
     });
 
+    // Prevent unbounded growth
+    const MAX_EVENTS = 200;
+    if (gameState.lastAttackEvents.length > MAX_EVENTS) {
+        gameState.lastAttackEvents.splice(0, gameState.lastAttackEvents.length - MAX_EVENTS);
+    }
+
     if (damage <= 0) {
         return {
             success: true,

@@ -16,6 +16,8 @@ let chatMessagesDiv: HTMLDivElement | null = null;
 let chatInput: HTMLInputElement | null = null;
 let statsButton: HTMLButtonElement | null = null;
 let statsContainer: HTMLDivElement | null = null;
+let optionsButton: HTMLButtonElement | null = null;
+let optionsContainer: HTMLDivElement | null = null;
 
 // Client-side types (subset mirrored from server for rendering)
 type Player = {
@@ -44,6 +46,11 @@ type Player = {
     attackRange: number;
     attackSpeed: number;
     lastAttackTime: number;
+
+    lastLevelUp?: {
+        level: number;
+        timestamp: number;
+    };
 };
 
 type Enemy = {
@@ -57,11 +64,22 @@ type Enemy = {
     sprite: string;
 };
 
+type AttackEvent = {
+    playerId: string;
+    enemyId: number;
+    damage: number;
+    timestamp: number;
+    x: number;
+    y: number;
+    enemyDead: boolean;
+};
+
 type GameState = {
     // authoritative fields
     players: Record<string, Player>;
     enemies: Enemy[];
     selectedTargets?: Record<string, number | null>;
+    lastAttackEvents?: AttackEvent[];
 
     // per-client fields
     selfId: string;
@@ -96,6 +114,12 @@ let gameStatePollId: number | null = null;
 let lastProcessedAttackTimestamp: number = 0;
 let lastProcessedIncomingHitTimestamp: number = 0;
 let hasInitializedAttackHistory = false;
+
+const lastProcessedLevelUpByPlayerId: Record<string, number> = {};
+
+let showOtherPlayersDamage = (localStorage.getItem('showOtherPlayersDamage') ?? '0') === '1';
+let lastProcessedOtherAttackEventTimestamp = 0;
+const processedOtherAttackEventKeys = new Map<string, number>();
 let gameSocket: WebSocket | null = null;
 const pendingMessages: any[] = []; // queue messages until socket is open
 
@@ -386,6 +410,20 @@ async function handleGameStateMessage(loadedGameState: GameState) {
         if (gameState.lastIncomingHit) {
             lastProcessedIncomingHitTimestamp = gameState.lastIncomingHit.timestamp;
         }
+
+        // Initialize level-up baselines so we don't replay old level-ups on first snapshot
+        for (const p of Object.values(gameState.players ?? {})) {
+            if (p.lastLevelUp) {
+                lastProcessedLevelUpByPlayerId[p.id] = p.lastLevelUp.timestamp;
+            }
+        }
+
+        // Initialize other-player damage baselines so we don't replay old events
+        const eventsInit = gameState.lastAttackEvents ?? [];
+        if (eventsInit.length) {
+            lastProcessedOtherAttackEventTimestamp = Math.max(...eventsInit.map(e => e.timestamp ?? 0));
+        }
+
         hasInitializedAttackHistory = true;
     } else if (gameState.lastAttackResult && gameState.lastAttackResult.timestamp > lastProcessedAttackTimestamp) {
         lastProcessedAttackTimestamp = gameState.lastAttackResult.timestamp;
@@ -411,6 +449,54 @@ async function handleGameStateMessage(loadedGameState: GameState) {
         spawnDamageNumber(incoming.x + 16, incoming.y, incoming.damage.toString(), 'red');
     }
 
+    // Level-up effects (green floating text) for any player
+    for (const p of Object.values(gameState.players ?? {})) {
+        const evt = p.lastLevelUp;
+        if (!evt) continue;
+        const lastTs = lastProcessedLevelUpByPlayerId[p.id] ?? 0;
+        if (evt.timestamp > lastTs) {
+            lastProcessedLevelUpByPlayerId[p.id] = evt.timestamp;
+            spawnDamageNumber(p.x + 16, p.y, `Level ${evt.level}!`, 'lime');
+        }
+    }
+
+    // Other-player outgoing damage numbers (light grey) (optional)
+    if (showOtherPlayersDamage) {
+        const now = Date.now();
+        const events = gameState.lastAttackEvents ?? [];
+
+        // prune processed keys (keep ~10s)
+        for (const [k, ts] of processedOtherAttackEventKeys.entries()) {
+            if (now - ts > 10_000) {
+                processedOtherAttackEventKeys.delete(k);
+            }
+        }
+
+        for (const evt of events) {
+            if (!evt) continue;
+            if (evt.playerId === gameState.selfId) continue;
+            if (typeof evt.damage !== 'number' || evt.damage <= 0) continue;
+
+            // Only process events that are at/after our baseline.
+            // We still use a key set to avoid duplicates (multiple events can share the same timestamp).
+            if (evt.timestamp < lastProcessedOtherAttackEventTimestamp) continue;
+
+            const key = `${evt.timestamp}:${evt.playerId}:${evt.enemyId}:${evt.damage}`;
+            if (processedOtherAttackEventKeys.has(key)) continue;
+            processedOtherAttackEventKeys.set(key, evt.timestamp);
+
+            spawnDamageNumber(evt.x + 12, evt.y, String(evt.damage), '#d0d0d0');
+        }
+
+        // Advance baseline (monotonic)
+        if (events.length) {
+            const maxTs = Math.max(...events.map(e => e.timestamp ?? 0));
+            if (maxTs > lastProcessedOtherAttackEventTimestamp) {
+                lastProcessedOtherAttackEventTimestamp = maxTs;
+            }
+        }
+    }
+
     if (attackTargetEnemyId !== null && gameState) {
         const enemy = gameState.enemies.find(e => e.id === attackTargetEnemyId);
         if (!enemy) {
@@ -424,6 +510,9 @@ async function handleGameStateMessage(loadedGameState: GameState) {
     // If stats panel is open, refresh its values
     if (statsContainer && statsContainer.style.display !== 'none') {
         updateStatsPanel();
+    }
+    if (optionsContainer && optionsContainer.style.display !== 'none') {
+        updateOptionsPanel();
     }
 }
 
@@ -583,6 +672,51 @@ world.onload = async () => {
             }
         });
 
+        // Options toggle button (near stats)
+        optionsButton = document.createElement('button');
+        optionsButton.textContent = 'Options';
+        optionsButton.style.position = 'fixed';
+        optionsButton.style.right = '360px';
+        optionsButton.style.bottom = '20px';
+        optionsButton.style.padding = '4px 8px';
+        optionsButton.style.fontSize = '12px';
+        optionsButton.style.fontFamily = 'sans-serif';
+        optionsButton.style.cursor = 'pointer';
+        optionsButton.style.background = 'rgba(0, 0, 0, 0.8)';
+        optionsButton.style.color = '#ffffff';
+        optionsButton.style.border = '1px solid rgba(255, 255, 255, 0.5)';
+        optionsButton.style.borderRadius = '3px';
+
+        optionsContainer = document.createElement('div');
+        optionsContainer.style.position = 'fixed';
+        // sit just to the left of the stats panel
+        optionsContainer.style.right = '290px';
+        optionsContainer.style.bottom = '120px';
+        optionsContainer.style.width = '260px';
+        optionsContainer.style.maxHeight = '300px';
+        optionsContainer.style.overflowY = 'auto';
+        optionsContainer.style.background = 'rgba(0, 0, 0, 0.85)';
+        optionsContainer.style.border = '1px solid rgba(255, 255, 255, 0.5)';
+        optionsContainer.style.borderRadius = '4px';
+        optionsContainer.style.padding = '8px';
+        optionsContainer.style.boxSizing = 'border-box';
+        optionsContainer.style.fontFamily = 'sans-serif';
+        optionsContainer.style.fontSize = '12px';
+        optionsContainer.style.color = '#ffffff';
+        optionsContainer.style.display = 'none';
+
+        optionsButton.addEventListener('click', () => {
+            if (!optionsContainer) return;
+            const visible = optionsContainer.style.display !== 'none';
+            optionsContainer.style.display = visible ? 'none' : 'block';
+            if (!visible) {
+                updateOptionsPanel();
+            }
+        });
+
+        body.appendChild(optionsButton);
+        body.appendChild(optionsContainer);
+
         body.appendChild(statsButton);
         body.appendChild(statsContainer);
     }
@@ -683,6 +817,57 @@ function updateStatsPanel() {
     footer.style.marginTop = '8px';
     footer.textContent = `Unallocated points: ${p.unallocatedPoints}`;
     statsContainer.appendChild(footer);
+}
+
+function updateOptionsPanel() {
+    if (!optionsContainer) return;
+
+    optionsContainer.innerHTML = '';
+
+    const header = document.createElement('div');
+    header.textContent = 'Options';
+    header.style.fontSize = '14px';
+    header.style.fontWeight = 'bold';
+    header.style.marginBottom = '6px';
+    optionsContainer.appendChild(header);
+
+    const row = document.createElement('div');
+    row.style.display = 'flex';
+    row.style.alignItems = 'center';
+    row.style.justifyContent = 'space-between';
+    row.style.gap = '8px';
+
+    const label = document.createElement('span');
+    label.textContent = "Show other players' damage";
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = showOtherPlayersDamage;
+    checkbox.addEventListener('change', () => {
+        showOtherPlayersDamage = checkbox.checked;
+        localStorage.setItem('showOtherPlayersDamage', showOtherPlayersDamage ? '1' : '0');
+
+        // When enabling, set baselines to "now" so we don't replay old events.
+        if (showOtherPlayersDamage && gameState) {
+            processedOtherAttackEventKeys.clear();
+            const events = gameState.lastAttackEvents ?? [];
+            if (events.length) {
+                lastProcessedOtherAttackEventTimestamp = Math.max(...events.map(e => e.timestamp ?? 0));
+            } else {
+                lastProcessedOtherAttackEventTimestamp = Date.now();
+            }
+        }
+    });
+
+    row.appendChild(label);
+    row.appendChild(checkbox);
+    optionsContainer.appendChild(row);
+
+    const hint = document.createElement('div');
+    hint.style.marginTop = '8px';
+    hint.style.opacity = '0.8';
+    hint.textContent = 'Shows outgoing damage numbers for other players (light grey).';
+    optionsContainer.appendChild(hint);
 }
 
 function spawnDamageNumber(x: number, y: number, text: string, color: string = 'white') {

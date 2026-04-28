@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "bun --hot src/server/index.ts",
+    "dev": "bun --hot src/server/index.ts | tee server.log",
     "build": "bun build ./src/index.html --outdir=public --sourcemap --target=browser --minify --define:process.env.NODE_ENV='\"production\"' --env='BUN_PUBLIC_*'",
     "start": "NODE_ENV=production bun src/index.ts",
     "compile": "tsc --ignoreConfig --skipLibCheck --types bun --noEmit false --outDir public --rootDir src src/api/*.ts src/home/*.ts src/app/*.ts src/home/signup/*.ts src/home/auth/*.ts"

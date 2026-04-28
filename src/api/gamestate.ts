@@ -24,6 +24,11 @@ export type IncomingHit = {
     y: number;
 };
 
+export type LevelUpEvent = {
+    level: number;
+    timestamp: number;
+};
+
 // Authoritative server-side state (shared across all clients)
 export type ServerGameState = {
     players: Record<string, Player>;
@@ -76,6 +81,7 @@ export type Player = {
     // Per-player UI events (so multiple concurrent clients don't stomp each other)
     lastAttackResult?: AttackResult;
     lastIncomingHit?: IncomingHit;
+    lastLevelUp?: LevelUpEvent;
 }
 
 export type Enemy = {
