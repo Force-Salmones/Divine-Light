@@ -31,8 +31,8 @@ export const users = pgTable("users", {
 export const mobs = pgTable("mobs", {
     id: serial("id").primaryKey().notNull(),
     mobId: integer("mob_id").notNull(),
-    homeX: integer("home_x").notNull().default(300),
-    homeY: integer("home_y").notNull().default(300),
+    homeX: integer("home_x").notNull().default(970),
+    homeY: integer("home_y").notNull().default(374),
 });
 
 export type User = typeof users.$inferSelect;

@@ -1204,10 +1204,28 @@ canvas.addEventListener('click', (event) => {
     const y = pt.y;
 
     const hit = getEntityAt(x, y);
+
+    // Alt+click on empty world space: put coordinates into chat input
+    if (event.altKey && !hit) {
+        const sx = Math.round(x);
+        const sy = Math.round(y);
+        if (chatInput) {
+            chatInput.value = `${sx} ${sy}`;
+            chatInput.focus();
+            chatInput.select();
+        }
+        appendChatMessage({
+            text: `World coords: ${sx} ${sy}`,
+            system: true,
+            timestamp: Date.now(),
+        });
+        return;
+    }
+
     if (hit?.type === 'enemy' && gameState) {
         const enemy = gameState.enemies.find(e => e.id === hit.id);
         if (enemy) {
-            // Alt+click: put the enemy instance (DB) id into the chat input for admin commands.
+            // Alt+click: put the enemy instance (DB) id into the chat input
             if (event.altKey) {
                 if (chatInput) {
                     chatInput.value = String(enemy.id);

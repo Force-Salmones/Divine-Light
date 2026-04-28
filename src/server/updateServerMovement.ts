@@ -2,6 +2,33 @@ import { gameState, type Player, type Enemy } from "../api/gamestate";
 import { performAttack } from "../api/performAttack";
 import { updateRespawns } from "./respawn";
 import { rollEnemyDamage } from "../api/calcDamage";
+import { sendChatToPlayer } from "./chatService";
+
+function respawnPlayer(player: Player) {
+    // For now: treat 0 HP as "death" and instantly respawn.
+    sendChatToPlayer(player.id, "You were defeated! Respawning...", true);
+
+    player.x = 970;
+    player.y = 374;
+    delete player.targetX;
+    delete player.targetY;
+
+    // Heal on respawn (prevents getting stuck at 0 HP)
+    player.currHealth = player.maxHealth;
+    player.currMana = player.maxMana;
+
+    // Stop any server-side auto-attack selection
+    gameState.selectedTargets[player.id] = null;
+
+    // Drop aggro from enemies currently targeting this player
+    for (const enemy of gameState.enemies) {
+        if (enemy.targetPlayerId === player.id) {
+            enemy.targetPlayerId = null;
+            enemy.targetX = enemy.homeX;
+            enemy.targetY = enemy.homeY;
+        }
+    }
+}
 
 export function updateServerMovement(deltaSeconds: number) {
     // Move all players with targets
@@ -78,7 +105,9 @@ export function updateServerMovement(deltaSeconds: number) {
                             enemy.lastAttackTime = now;
                             const damage = rollEnemyDamage(enemy, player);
                             if (damage > 0) {
+                                const before = player.currHealth;
                                 player.currHealth = Math.max(0, player.currHealth - damage);
+
                                 // Record last incoming hit for THIS player so their own client can show damage numbers
                                 player.lastIncomingHit = {
                                     damage,
@@ -86,6 +115,11 @@ export function updateServerMovement(deltaSeconds: number) {
                                     x: player.x,
                                     y: player.y,
                                 };
+
+                                // Death/respawn
+                                if (before > 0 && player.currHealth <= 0) {
+                                    respawnPlayer(player);
+                                }
                             }
                         }
                     }
