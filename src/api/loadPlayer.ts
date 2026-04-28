@@ -58,16 +58,16 @@ function calcMana(user: User): number {
 
 function calcDefense(user: User): number {
     const level = user.level;
-    return (Math.floor(level**1.2 / 10) + 
+    return Math.floor(((level**1.2 / 10) + 
         user.baseVIT * (1.5 + Math.floor(level / 30)) +
         user.baseSTR * (1 + Math.floor(level / 40)) +
-        user.baseDEX * (1 + Math.floor(level / 50))) * .5 - 10;
+        user.baseDEX * (1 + Math.floor(level / 50))) * .5 - 10);
 }
 
 function calcResistance(user: User): number {
     const level = user.level;
-    return (Math.floor(level**1.1 / 10) + 
+    return Math.floor(((level**1.1 / 10) + 
         user.baseWIS * (1.5 + Math.floor(level / 30)) +
         user.baseINT * (1 + Math.floor(level / 40)) +
-        user.baseLUK * (1 + Math.floor(level / 50))) * .5 - 10;
+        user.baseLUK * (1 + Math.floor(level / 50))) * .5 - 10);
 }

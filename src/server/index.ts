@@ -310,7 +310,6 @@ async function startServer() {
                                     break;
                                 }
                                 if (commandName === "shutdown") {
-                                    sendChatToPlayer(currentPlayerId, "Server is shutting down...", true);
                                     broadcastChatMessage("Server is shutting down...", undefined, true);
                                     void shutdown(`Requested by ${currentPlayerId}`);
                                     break;
