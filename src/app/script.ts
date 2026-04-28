@@ -48,6 +48,7 @@ function resizeCanvasToScreen() {
     canvas.height = Math.floor(canvasCssHeight * dpr);
 
     updateViewTransform();
+    layoutOverlayElements();
 }
 
 function screenToWorld(clientX: number, clientY: number) {
@@ -58,6 +59,66 @@ function screenToWorld(clientX: number, clientY: number) {
     const wx = (sx - viewOffsetX) / viewScale;
     const wy = (sy - viewOffsetY) / viewScale;
     return { x: wx, y: wy };
+}
+
+function getWorldViewportRectCss() {
+    const width = worldWidth * viewScale;
+    const height = worldHeight * viewScale;
+    return {
+        left: viewOffsetX,
+        top: viewOffsetY,
+        width,
+        height,
+        right: viewOffsetX + width,
+        bottom: viewOffsetY + height,
+    };
+}
+
+function layoutOverlayElements() {
+    const vp = getWorldViewportRectCss();
+    const outsideRight = Math.max(0, canvasCssWidth - vp.right);
+    const outsideBottom = Math.max(0, canvasCssHeight - vp.bottom);
+
+    // Keep DOM overlays inside the world viewport region (not in the letterbox bars)
+    if (chatContainer) {
+        const maxWidth = Math.max(280, vp.width - 20);
+        chatContainer.style.left = `${vp.left + 10}px`;
+        chatContainer.style.bottom = `${outsideBottom + 10}px`;
+        chatContainer.style.width = `${Math.min(600, maxWidth)}px`;
+    }
+
+    // Avoid overlapping the canvas-drawn player status panel (bottom-right).
+    // The player status panel is 260x90 and sits at (vp.right - 260 - 10, vp.bottom - 90 - 10).
+    const playerPanelHeight = 90;
+    const playerPanelMargin = 10;
+    const buttonGapFromPlayerPanel = 12;
+    const buttonBottom = outsideBottom + playerPanelHeight + playerPanelMargin + buttonGapFromPlayerPanel;
+
+    const statsBtnHeight = statsButton?.offsetHeight ?? 24;
+    const panelGapFromButtons = 10;
+    const panelBottom = buttonBottom + statsBtnHeight + panelGapFromButtons;
+
+    if (statsButton) {
+        statsButton.style.right = `${outsideRight + 20}px`;
+        statsButton.style.bottom = `${buttonBottom}px`;
+    }
+
+    if (optionsButton) {
+        // to the left of the stats button
+        optionsButton.style.right = `${outsideRight + 110}px`;
+        optionsButton.style.bottom = `${buttonBottom}px`;
+    }
+
+    if (statsContainer) {
+        statsContainer.style.right = `${outsideRight + 20}px`;
+        statsContainer.style.bottom = `${panelBottom}px`;
+    }
+
+    if (optionsContainer) {
+        // to the left of the stats panel
+        optionsContainer.style.right = `${outsideRight + 20 + 270}px`;
+        optionsContainer.style.bottom = `${panelBottom}px`;
+    }
 }
 
 // Chat types
@@ -263,8 +324,9 @@ function drawAttackRangeCircle(radius: number) {
 }
 
 function drawSelectedEnemyPanel(enemy: Enemy) {
-    const panelX = 10;
-    const panelY = 10;
+    const vp = getWorldViewportRectCss();
+    const panelX = vp.left + 10;
+    const panelY = vp.top + 10;
     const panelWidth = 220;
     const panelHeight = 80;
 
@@ -328,8 +390,9 @@ function isWithinPlayerAttackRange(target: Player) {
 }
 
 function drawSelectedPlayerPanel(player: Player) {
-    const panelX = 10;
-    const panelY = 10;
+    const vp = getWorldViewportRectCss();
+    const panelX = vp.left + 10;
+    const panelY = vp.top + 10;
     const panelWidth = 220;
     const panelHeight = 80;
 
@@ -673,7 +736,7 @@ world.onload = async () => {
 
         chatInput = document.createElement('input');
         chatInput.type = 'text';
-        chatInput.placeholder = 'Type message... ($ for admin command)';
+        chatInput.placeholder = 'Type message...';
         chatInput.style.width = '100%';
         chatInput.style.boxSizing = 'border-box';
         chatInput.style.border = '1px solid rgba(255, 255, 255, 0.3)';
@@ -788,6 +851,9 @@ world.onload = async () => {
 
         body.appendChild(statsButton);
         body.appendChild(statsContainer);
+
+        // Position overlays inside the world viewport (not in letterboxing)
+        layoutOverlayElements();
     }
 
     requestAnimationFrame(gameLoop);
@@ -1086,10 +1152,12 @@ function drawPlayerInfoPanel() {
     if (!gameState) return;
     const p = gameState.player;
 
+    const vp = getWorldViewportRectCss();
+
     const panelWidth = 260;
     const panelHeight = 90;
-    const panelX = canvasCssWidth - panelWidth - 10;
-    const panelY = canvasCssHeight - panelHeight - 10;
+    const panelX = vp.right - panelWidth - 10;
+    const panelY = vp.bottom - panelHeight - 10;
 
     ctx.save();
     ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
@@ -1139,6 +1207,21 @@ canvas.addEventListener('click', (event) => {
     if (hit?.type === 'enemy' && gameState) {
         const enemy = gameState.enemies.find(e => e.id === hit.id);
         if (enemy) {
+            // Alt+click: put the enemy instance (DB) id into the chat input for admin commands.
+            if (event.altKey) {
+                if (chatInput) {
+                    chatInput.value = String(enemy.id);
+                    chatInput.focus();
+                    chatInput.select();
+                }
+                appendChatMessage({
+                    text: `Enemy instance id: ${enemy.id}`,
+                    system: true,
+                    timestamp: Date.now(),
+                });
+                return;
+            }
+
             if (selectedEntity?.type === 'enemy' && selectedEntity.id === hit.id) {
                 selectedEntity = hit;
                 // Always request attack; server will auto-attack when in range

@@ -5,7 +5,7 @@ import type { Mob } from "../db/schema";
 
 // Track pending respawns by unique mob instance id (DB primary key)
 type PendingRespawn = { id: number; at: number };
-const pendingRespawns: PendingRespawn[] = [];
+export const pendingRespawns: PendingRespawn[] = [];
 
 export function scheduleMobRespawn(enemy: Enemy) {
     // Avoid scheduling duplicates for the same id

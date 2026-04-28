@@ -125,7 +125,7 @@ function startTickLoop() {
     }, TICK_INTERVAL_MS);
 }
 
-async function initializeGameState() {
+export async function initializeEnemies() {
     const dbMobs = await getAllMobs();
     const enemies = await Promise.all(dbMobs.map((mob) => loadEnemy(mob)));
     gameState.enemies = enemies;
@@ -199,7 +199,7 @@ async function shutdown(reason: string) {
 }
 
 async function startServer() {
-    await initializeGameState();
+    await initializeEnemies();
     startTickLoop();
 
     // Periodic persistence of all online players (every 60 seconds)
@@ -332,7 +332,11 @@ async function startServer() {
                                     },
                                 };
 
-                                void handler(ctx);
+                                Promise.resolve(handler(ctx)).catch((err) => {
+                                    console.error("Chat command failed", { playerId: currentPlayerId, commandName }, err);
+                                    const msg = err instanceof Error ? err.message : String(err);
+                                    sendChatToPlayer(currentPlayerId, `Command failed: ${msg}`, true);
+                                });
                             } else {
                                 // Normal player chat: broadcast to everyone, using player name if available
                                 const p = gameState.players[currentPlayerId];

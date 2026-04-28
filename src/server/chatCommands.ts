@@ -1,3 +1,9 @@
+import { readFile } from "fs/promises";
+import { gameState } from "../api/gamestate";
+import { pendingRespawns } from "./respawn";
+import { createMob, getAllMobs, removeMob } from "../db/queries/mobs";
+import { loadEnemy } from "../api/loadEnemy";
+
 export type ChatCommandContext = {
     playerId: string;
     args: string[];
@@ -15,28 +21,81 @@ export type ChatCommandHandler = (ctx: ChatCommandContext) => void | Promise<voi
  * Example: "$echo hello world" -> command "echo" with args ["hello", "world"].
  */
 export const adminChatCommands: Record<string, ChatCommandHandler> = {
-    // Simple example command: echoes the arguments back only to the sender
-    echo: ({ args, reply }) => {
+    //broadcast command: sends a system message to everyone
+    announce: ({ args, broadcast, reply }) => {
         if (!args.length) {
-            void reply("Usage: $echo <message>");
-        } else {
-            void reply(args.join(" "));
+            void reply("Usage: $announce <message>");
+            return;
         }
-    },
-
-    // Display supplied text only to the current player
-    say: ({ args, reply }) => {
-        if (!args.length) {
-            void reply("Usage: $say <message>");
-        } else {
-            void reply(args.join(" "));
-        }
-    },
-
-    // Example broadcast command: sends a system message to everyone
-    announce: ({ args, broadcast }) => {
-        if (!args.length) return;
         const text = args.join(" ");
         void broadcast(`[Announcement] ${text}`);
+    },
+
+    // addmob command: adds a new enemy instance to the database (+ spawns it immediately)
+    // Usage: $addmob <mobTypeId> <homeX> <homeY>
+    addmob: async ({ args, reply }) => {
+        if (args.length < 3) {
+            await reply("Usage: $addmob <mobTypeId> <homeX> <homeY>");
+            return;
+        }
+
+        const mobTypeId = Number(args[0]);
+        const homeX = Number(args[1]);
+        const homeY = Number(args[2]);
+
+        if (!Number.isFinite(mobTypeId) || !Number.isFinite(homeX) || !Number.isFinite(homeY)) {
+            await reply("Usage: $addmob <mobTypeId> <homeX> <homeY> (all must be numbers)");
+            return;
+        }
+
+        // Validate the mob type exists in mobs.json
+        const jsonRaw = await readFile(new URL("../db/mobs.json", import.meta.url), "utf8");
+        const jsonData = JSON.parse(jsonRaw);
+        const mobData = jsonData[mobTypeId];
+        if (!mobData) {
+            await reply(`Enemy type ${mobTypeId} not found in mobs.json`);
+            return;
+        }
+
+        const inserted = await createMob(mobTypeId, homeX, homeY);
+        const row = inserted?.[0];
+        if (!row) {
+            await reply("Failed to create mob (no row returned)");
+            return;
+        }
+
+        // Spawn immediately in the current world
+        const enemy = await loadEnemy(row);
+        if (!gameState.enemies.some((e) => e.id === enemy.id)) {
+            gameState.enemies.push(enemy);
+        }
+
+        await reply(`Added mob instance #${row.id} (type ${mobTypeId}) at (${homeX}, ${homeY})`);
+    },
+
+    // delmob command: removes an enemy from the database by its unique instance ID (+ despawns it)
+    // Usage: $delmob <instanceId>
+    delmob: async ({ args, reply }) => {
+        if (args.length < 1) {
+            await reply("Usage: $delmob <instanceId>");
+            return;
+        }
+
+        const instanceId = Number(args[0]);
+        if (!Number.isFinite(instanceId)) {
+            await reply("Usage: $delmob <instanceId> (must be a number)");
+            return;
+        }
+
+        await removeMob(instanceId);
+
+        // Despawn immediately
+        gameState.enemies = gameState.enemies.filter((e) => e.id !== instanceId);
+
+        // Also cancel any pending respawn for this instance (best-effort)
+        const idx = pendingRespawns.findIndex((r) => r.id === instanceId);
+        if (idx >= 0) pendingRespawns.splice(idx, 1);
+
+        await reply(`Deleted mob instance #${instanceId}`);
     },
 };
