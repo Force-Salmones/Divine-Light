@@ -92,16 +92,68 @@ export function updateServerMovement(deltaSeconds: number) {
                 }
             }
         } else {
-            // No target: if away from home, walk back
-            const dxHome = enemy.homeX - enemy.x;
-            const dyHome = enemy.homeY - enemy.y;
-            const distHome = Math.hypot(dxHome, dyHome);
-            if (distHome > 1) {
-                enemy.targetX = enemy.homeX;
-                enemy.targetY = enemy.homeY;
-            } else {
-                enemy.targetX = undefined;
-                enemy.targetY = undefined;
+            // No target: if no movement target, decide whether to roam (step-by-step) or return home.
+            const dxFromHome = enemy.x - enemy.homeX;
+            const dyFromHome = enemy.y - enemy.homeY;
+            const distFromHome = Math.hypot(dxFromHome, dyFromHome);
+
+            const hasMoveTarget = enemy.targetX !== undefined && enemy.targetY !== undefined;
+            if (!hasMoveTarget) {
+                // If we somehow got pushed far outside the roam area, walk back home.
+                const ROAM_AREA_RADIUS = 200;
+                const HARD_RETURN_RADIUS = ROAM_AREA_RADIUS + 20;
+                if (distFromHome > HARD_RETURN_RADIUS) {
+                    enemy.targetX = enemy.homeX;
+                    enemy.targetY = enemy.homeY;
+                } else {
+                    // Idle roaming: periodically attempt to take a 50-100px step, staying within ROAM_AREA_RADIUS.
+                    const nowMs = Date.now();
+                    if (nowMs >= enemy.nextRoamTimeMs) {
+                        // Mildly reduce roam frequency by adding a chance to "do nothing" this cycle.
+                        const ROAM_CHANCE = 0.65;
+                        if (Math.random() > ROAM_CHANCE) {
+                            // Try again a bit later
+                            enemy.nextRoamTimeMs = nowMs + 3000 + Math.random() * 4000;
+                        } else {
+                            const STEP_MIN = 50;
+                            const STEP_MAX = 100;
+                            const step = STEP_MIN + Math.random() * (STEP_MAX - STEP_MIN);
+
+                            // Sample a step direction; keep within the roam area circle around home.
+                            let chosenX: number | undefined;
+                            let chosenY: number | undefined;
+                            for (let i = 0; i < 12; i++) {
+                                const angle = Math.random() * Math.PI * 2;
+                                const tx = enemy.x + Math.cos(angle) * step;
+                                const ty = enemy.y + Math.sin(angle) * step;
+                                const ddx = tx - enemy.homeX;
+                                const ddy = ty - enemy.homeY;
+                                if (Math.hypot(ddx, ddy) <= ROAM_AREA_RADIUS) {
+                                    chosenX = tx;
+                                    chosenY = ty;
+                                    break;
+                                }
+                            }
+
+                            // Fallback: step toward home if we couldn't find a legal direction quickly.
+                            if (chosenX === undefined || chosenY === undefined) {
+                                const toHomeDx = enemy.homeX - enemy.x;
+                                const toHomeDy = enemy.homeY - enemy.y;
+                                const toHomeDist = Math.hypot(toHomeDx, toHomeDy) || 1;
+                                const ratio = step / toHomeDist;
+                                chosenX = enemy.x + toHomeDx * ratio;
+                                chosenY = enemy.y + toHomeDy * ratio;
+                            }
+
+                            enemy.targetX = chosenX;
+                            enemy.targetY = chosenY;
+
+                            // Do NOT schedule the next roam here; we want to pause at the destination.
+                            // We'll set nextRoamTimeMs when the enemy arrives.
+                            enemy.nextRoamTimeMs = Number.POSITIVE_INFINITY;
+                        }
+                    }
+                }
             }
         }
 
@@ -117,6 +169,12 @@ export function updateServerMovement(deltaSeconds: number) {
                 enemy.y = enemy.targetY;
                 enemy.targetX = undefined;
                 enemy.targetY = undefined;
+
+                // If idle (not aggro'd), pause for a bit at the destination before roaming again.
+                if (!enemy.targetPlayerId) {
+                    const nowMs = Date.now();
+                    enemy.nextRoamTimeMs = nowMs + 4000 + Math.random() * 6000;
+                }
             } else {
                 const ratio = maxDistance / distance;
                 enemy.x += dx * ratio;

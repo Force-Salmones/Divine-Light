@@ -114,6 +114,10 @@ export type Enemy = {
     // Optional movement target when chasing or returning home
     targetX?: number;
     targetY?: number;
+
+    // Roaming: next time (ms) we may pick a random point near home
+    nextRoamTimeMs: number;
+
     // Last time this enemy performed an attack (seconds since epoch)
     lastAttackTime: number;
     sprite: string;

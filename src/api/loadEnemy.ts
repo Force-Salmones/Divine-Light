@@ -10,6 +10,7 @@ export async function loadEnemy(mob: Mob): Promise<Enemy> {
         throw new Error(`Enemy type ${mob.mobId} not found in mobs.json`);
     }
 
+    const nowMs = Date.now();
     const enemy: Enemy = {
         id: mob.id, // unique instance id from DB row
         mobId: mob.mobId, // enemy type id
@@ -37,6 +38,8 @@ export async function loadEnemy(mob: Mob): Promise<Enemy> {
         targetPlayerId: null,
         targetX: undefined,
         targetY: undefined,
+        // Start with a short idle pause so mobs don't all move instantly on load
+        nextRoamTimeMs: nowMs + 4000 + Math.random() * 5000,
         lastAttackTime: 0,
         sprite: `/assets/mobs/${mob.mobId}.png`
     };
