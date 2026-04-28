@@ -128,6 +128,23 @@ function drawOutline(x: number, y: number, width: number, height: number) {
     ctx.restore();
 }
 
+function drawNameTag(x: number, y: number, width: number, name: string) {
+    const text = `<${name}>`;
+    const textX = x + width / 2;
+    const textY = y - 6;
+
+    ctx.save();
+    ctx.font = '12px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.85)';
+    ctx.fillStyle = 'white';
+    ctx.strokeText(text, textX, textY);
+    ctx.fillText(text, textX, textY);
+    ctx.restore();
+}
+
 function drawAttackRangeCircle(radius: number) {
     if (!gameState) return;
     ctx.save();
@@ -648,6 +665,11 @@ function render() {
     } else {
         ctx.fillStyle = 'blue';
         ctx.fillRect(gameState.player.x, gameState.player.y, 32, 32);
+    }
+
+    // Name tag above player
+    if (gameState.player.name) {
+        drawNameTag(gameState.player.x, gameState.player.y, 32, gameState.player.name);
     }
 
     if (selectedEntity?.type === 'player') {
