@@ -86,7 +86,10 @@ type GameState = {
 
 let gameState: GameState | null = null;
 const sprites: Map<string, HTMLImageElement> = new Map();
-let selectedEntity: { type: 'player' | 'enemy'; id?: number } | null = null;
+let selectedEntity:
+    | { type: 'player'; id: string }
+    | { type: 'enemy'; id: number }
+    | null = null;
 let attackTargetEnemyId: number | null = null;
 let attackIntervalId: number | null = null;
 let gameStatePollId: number | null = null;
@@ -114,13 +117,21 @@ function getEntityAt(x: number, y: number) {
 
     const playerWidth = 32;
     const playerHeight = 32;
-    if (
-        x >= gameState.player.x &&
-        x <= gameState.player.x + playerWidth &&
-        y >= gameState.player.y &&
-        y <= gameState.player.y + playerHeight
-    ) {
-        return { type: 'player' as const };
+
+    // Prefer other players over self if overlapping.
+    const players = Object.values(gameState.players ?? {});
+
+    for (const p of players) {
+        if (p.id === gameState.selfId) continue;
+        if (x >= p.x && x <= p.x + playerWidth && y >= p.y && y <= p.y + playerHeight) {
+            return { type: 'player' as const, id: p.id };
+        }
+    }
+
+    // Self
+    const self = gameState.player;
+    if (x >= self.x && x <= self.x + playerWidth && y >= self.y && y <= self.y + playerHeight) {
+        return { type: 'player' as const, id: self.id };
     }
 
     const clickedEnemy = gameState.enemies.find(enemy =>
@@ -220,7 +231,58 @@ function isWithinAttackRange(enemy: Enemy) {
     return Math.hypot(dx, dy) <= player.attackRange;
 }
 
+function isWithinPlayerAttackRange(target: Player) {
+    if (!gameState) return false;
+    const attacker = gameState.player;
+    if (!attacker) return false;
 
+    const attackerCenterX = attacker.x + 16;
+    const attackerCenterY = attacker.y + 16;
+    const targetCenterX = target.x + 16;
+    const targetCenterY = target.y + 16;
+    const dx = targetCenterX - attackerCenterX;
+    const dy = targetCenterY - attackerCenterY;
+    return Math.hypot(dx, dy) <= attacker.attackRange;
+}
+
+function drawSelectedPlayerPanel(player: Player) {
+    const panelX = 10;
+    const panelY = 10;
+    const panelWidth = 220;
+    const panelHeight = 80;
+
+    ctx.save();
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+    ctx.fillRect(panelX, panelY, panelWidth, panelHeight);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(panelX, panelY, panelWidth, panelHeight);
+
+    ctx.fillStyle = 'white';
+    ctx.font = '14px sans-serif';
+    ctx.fillText(player.name || `Player`, panelX + 10, panelY + 22);
+    ctx.font = '12px sans-serif';
+    ctx.fillText(`Level ${player.level}`, panelX + 10, panelY + 38);
+    ctx.fillText(`HP: ${player.currHealth}/${player.maxHealth}`, panelX + 10, panelY + 54);
+
+    const status = isWithinPlayerAttackRange(player) ? 'In range' : 'Out of range';
+    ctx.fillStyle = status === 'In range' ? 'lightgreen' : 'lightcoral';
+    ctx.fillText(status, panelX + 10, panelY + 70);
+
+    // Draw player sprite on the right side of the panel
+    const spriteImg = sprites.get(player.sprite);
+    const spriteSize = 32;
+    const spriteX = panelX + panelWidth - spriteSize - 8;
+    const spriteY = panelY + (panelHeight - spriteSize) / 2;
+    if (spriteImg) {
+        ctx.drawImage(spriteImg, spriteX, spriteY, spriteSize, spriteSize);
+    } else {
+        ctx.fillStyle = 'blue';
+        ctx.fillRect(spriteX, spriteY, spriteSize, spriteSize);
+    }
+
+    ctx.restore();
+}
 
 function stopAttackLoop() {
     if (attackIntervalId !== null) {
@@ -399,6 +461,12 @@ function connectGameSocket() {
                     timestamp: typeof data.timestamp === 'number' ? data.timestamp : Date.now(),
                 };
                 appendChatMessage(msg);
+            } else if (data.type === 'bonk') {
+                const x = typeof data.x === 'number' ? data.x : undefined;
+                const y = typeof data.y === 'number' ? data.y : undefined;
+                if (x !== undefined && y !== undefined) {
+                    spawnDamageNumber(x + 16, y, 'bonk', 'white');
+                }
             }
         } catch (err) {
             console.error('WS message parse error:', err);
@@ -664,7 +732,11 @@ function render() {
     // Draw the world background
     ctx.drawImage(world, 0, 0, canvas.width, canvas.height);
 
-    const showAttackRange = selectedEntity?.type === 'enemy' || attackTargetEnemyId !== null || attackIntervalId !== null;
+    const showAttackRange =
+        selectedEntity?.type === 'enemy' ||
+        selectedEntity?.type === 'player' ||
+        attackTargetEnemyId !== null ||
+        attackIntervalId !== null;
     if (showAttackRange) {
         drawAttackRangeCircle(gameState.player.attackRange);
     }
@@ -684,6 +756,10 @@ function render() {
         if (p.name) {
             drawNameTag(p.x, p.y, 32, p.name);
         }
+
+        if (selectedEntity?.type === 'player' && selectedEntity.id === p.id) {
+            drawOutline(p.x, p.y, 32, 32);
+        }
     }
 
     // Draw local player
@@ -700,7 +776,7 @@ function render() {
         drawNameTag(gameState.player.x, gameState.player.y, 32, gameState.player.name);
     }
 
-    if (selectedEntity?.type === 'player') {
+    if (selectedEntity?.type === 'player' && selectedEntity.id === gameState.selfId) {
         drawOutline(gameState.player.x, gameState.player.y, 32, 32);
     }
 
@@ -721,12 +797,18 @@ function render() {
 
     renderDamageNumbers();
 
-    // Enemy info panel (top-left)
-    if (selectedEntity?.type === 'enemy') {
-        const selected = selectedEntity;
-        const enemy = gameState.enemies.find(e => e.id === selected.id);
+    // Enemy/player info panel (top-left)
+    if (selectedEntity && selectedEntity.type === 'enemy') {
+        const selectedEnemyId = selectedEntity.id;
+        const enemy = gameState.enemies.find(e => e.id === selectedEnemyId);
         if (enemy) {
             drawSelectedEnemyPanel(enemy);
+        }
+    } else if (selectedEntity && selectedEntity.type === 'player') {
+        const selectedPlayerId = selectedEntity.id;
+        const p = gameState.players[selectedPlayerId];
+        if (p && p.id !== gameState.selfId) {
+            drawSelectedPlayerPanel(p);
         }
     }
 
@@ -802,6 +884,24 @@ canvas.addEventListener('click', (event) => {
             selectedEntity = hit;
             return;
         }
+    }
+
+    if (hit?.type === 'player' && gameState) {
+        // Selecting a player target is separate from enemy auto-attack.
+        stopAttackLoop();
+
+        // If we're clicking the already-targeted player again, attempt a "bonk".
+        if (hit.id !== gameState.selfId && selectedEntity?.type === 'player' && selectedEntity.id === hit.id) {
+            const target = gameState.players[hit.id];
+            if (target && isWithinPlayerAttackRange(target)) {
+                sendGameMessage({ type: 'bonkPlayer', targetPlayerId: hit.id });
+            }
+            return;
+        }
+
+        // Otherwise just target them.
+        selectedEntity = hit;
+        return;
     }
 
     if (hit) {

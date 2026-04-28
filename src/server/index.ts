@@ -33,6 +33,17 @@ let shuttingDown = false;
 // Tracks the active WS connection per playerId (prevents two tabs controlling the same character)
 const wsByPlayerId = new Map<string, any>();
 
+function sendWsToPlayer(playerId: string, payload: any) {
+    const ws = wsByPlayerId.get(playerId);
+    if (!ws) return;
+    if (ws.readyState !== 1) return;
+    try {
+        ws.send(JSON.stringify(payload));
+    } catch (err) {
+        console.error("Failed to send ws payload", { playerId, payloadType: payload?.type }, err);
+    }
+}
+
 function parseCookies(cookieHeader: string | undefined): Record<string, string> {
     const out: Record<string, string> = {};
     if (!cookieHeader) return out;
@@ -406,6 +417,42 @@ async function startServer() {
                             gameState.selectedTargets[currentPlayerId] = null;
                             break;
                         }
+                        case "bonkPlayer": {
+                            const { targetPlayerId } = msg as { targetPlayerId?: string };
+                            if (typeof targetPlayerId !== "string" || !targetPlayerId) break;
+                            if (targetPlayerId === currentPlayerId) break;
+
+                            const attacker = gameState.players[currentPlayerId];
+                            const target = gameState.players[targetPlayerId];
+                            if (!attacker || !target) break;
+
+                            const attackerCenterX = attacker.x + 16;
+                            const attackerCenterY = attacker.y + 16;
+                            const targetCenterX = target.x + 16;
+                            const targetCenterY = target.y + 16;
+                            const dx = targetCenterX - attackerCenterX;
+                            const dy = targetCenterY - attackerCenterY;
+                            const distance = Math.hypot(dx, dy);
+
+                            if (distance > attacker.attackRange) {
+                                break;
+                            }
+
+                            const evt = {
+                                type: "bonk",
+                                fromId: currentPlayerId,
+                                toId: targetPlayerId,
+                                x: target.x,
+                                y: target.y,
+                                timestamp: Date.now(),
+                            };
+
+                            // Both players should see the bonk
+                            sendWsToPlayer(currentPlayerId, evt);
+                            sendWsToPlayer(targetPlayerId, evt);
+
+                            break;
+                        }
                         case "spendStat": {
                             const { stat } = msg as { stat?: string };
                             const player = gameState.players[currentPlayerId];
@@ -480,7 +527,16 @@ app.post("/api/move-player", requireJwtForApi, handlerMovePlayer);
 app.post("/api/attack-enemy", requireJwtForApi, handlerAttackEnemy);
 
 // Require auth to load the game client
-app.use("/app", requireJwtForApp, express.static("./public/app"));
+// Disable caching in dev to avoid one client running stale JS while another runs fresh JS.
+app.use(
+    "/app",
+    requireJwtForApp,
+    express.static("./public/app", {
+        setHeaders: (res) => {
+            res.setHeader("Cache-Control", "no-store");
+        },
+    })
+);
 app.use("/home", express.static("./public/home"));
 app.use("/signup", express.static("./public/home/signup"));
 app.use("/login", express.static("./public/home/auth"));
