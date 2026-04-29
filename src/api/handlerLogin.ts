@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { getUserByEmail } from "../db/queries/users";
-import { checkPasswordHash, makeJWT } from "../auth";
+import { checkPasswordHash, makeJWT } from "../auth/auth";
 import { config } from "../config";
 
 const JWT_COOKIE_NAME = "jwt";

@@ -1,0 +1,58 @@
+{
+    "0": {
+        "name": "Slime",
+        "level": 1,
+        "experience": 15,
+        "gold": 5,
+        "health": 50,
+        "damage": 4,
+        "damageType": "physical",
+        "attackSpeed": 1,
+        "attackRange": 50,
+        "defense": 0,
+        "resistance": 0,
+        "speed": 50,
+        "reSpawnTime": 10,
+        "aggressive": false,
+        "retreats": false,
+        "drops": {}
+    },
+    "1":
+    {
+        "name": "Ribbon Pig",
+        "level": 10,
+        "experience": 35,
+        "gold": 20,
+        "health": 200,
+        "damage": 30,
+        "damageType": "physical",
+        "attackSpeed": 1,
+        "attackRange": 50,
+        "defense": 15,
+        "resistance": 0,
+        "speed": 60,
+        "reSpawnTime": 10,
+        "aggressive": false,
+        "retreats": false,
+        "drops": {}
+    },
+    "2":
+    {
+        "name": "Stone Golem",
+        "level": 25,
+        "experience": 100,
+        "gold": 100,
+        "health": 750,
+        "damage": 150,
+        "damageType": "physical",
+        "attackSpeed": 1,
+        "attackRange": 50,
+        "defense": 30,
+        "resistance": 0,
+        "speed": 30,
+        "reSpawnTime": 10,
+        "aggressive": false,
+        "retreats": false,
+        "drops": {}
+    }
+}

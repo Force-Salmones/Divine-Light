@@ -20,7 +20,7 @@ import { getUserById, updateUser } from "../db/queries/users";
 import { recalcPlayerDerivedStats } from "../api/recalcPlayerStats";
 import { handlerLogin } from "../api/handlerLogin";
 import { handlerLogout } from "../api/handlerLogout";
-import { validateJWT } from "../auth";
+import { validateJWT } from "../auth/auth";
 
 const app = express();
 
