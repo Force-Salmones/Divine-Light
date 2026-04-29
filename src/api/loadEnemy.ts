@@ -3,7 +3,7 @@ import type { Enemy } from "./gamestate";
 import type { Mob } from "../db/schema";
 
 export async function loadEnemy(mob: Mob): Promise<Enemy> {
-    const jsonRaw = await readFile(new URL("../db/mobs.json", import.meta.url), "utf8");
+    const jsonRaw = await readFile(new URL("../db/data/mobs.json", import.meta.url), "utf8");
     const jsonData = JSON.parse(jsonRaw);
     const mobData = jsonData[mob.mobId];
     if (!mobData) {
@@ -41,7 +41,8 @@ export async function loadEnemy(mob: Mob): Promise<Enemy> {
         // Start with a short idle pause so mobs don't all move instantly on load
         nextRoamTimeMs: nowMs + 4000 + Math.random() * 5000,
         lastAttackTime: 0,
-        sprite: `/assets/mobs/${mob.mobId}.png`
+        sprite: `/assets/mobs/${mob.mobId}.png`,
+        size: mobData.size,
     };
     return enemy;
 }

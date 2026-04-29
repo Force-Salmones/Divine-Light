@@ -77,6 +77,7 @@ export type Player = {
     targetX?: number;
     targetY?: number;
     inventory: {};
+    size: number;
 
     // Per-player UI events (so multiple concurrent clients don't stomp each other)
     lastAttackResult?: AttackResult;
@@ -121,6 +122,7 @@ export type Enemy = {
     // Last time this enemy performed an attack (seconds since epoch)
     lastAttackTime: number;
     sprite: string;
+    size: number;
 }
 
 export const gameState: ServerGameState = {

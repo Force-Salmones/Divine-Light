@@ -21,6 +21,8 @@ import { recalcPlayerDerivedStats } from "../api/recalcPlayerStats";
 import { handlerLogin } from "../api/handlerLogin";
 import { handlerLogout } from "../api/handlerLogout";
 import { validateJWT } from "../auth/auth";
+import { calculateApproachCoords } from "../game/logic/movement/calculateApproachCoords";
+import { calculateTargetDistance } from "@/game/logic/movement/calculateTargetDistance";
 
 const app = express();
 
@@ -354,30 +356,10 @@ async function startServer() {
                                 // Move toward enemy slightly inside attack range
                                 const enemy = gameState.enemies.find(e => e.id === enemyId);
                                 if (!enemy) break;
-                                console.log("WS move towards enemy", { currentPlayerId, enemyId, playerPos: { x: player.x, y: player.y }, enemyPos: { x: enemy.x, y: enemy.y } });
-                                const playerCenterX = player.x + 16;
-                                const playerCenterY = player.y + 16;
-                                const enemyCenterX = enemy.x + 12;
-                                const enemyCenterY = enemy.y + 12;
-                                const dx = enemyCenterX - playerCenterX;
-                                const dy = enemyCenterY - playerCenterY;
-                                const distance = Math.hypot(dx, dy);
-                                const approachMargin = 3;
-                                const desiredDistance = Math.max(0, player.attackRange - approachMargin);
-                                // If we're already within (or closer than) the desired distance,
-                                // don't set a new movement target (prevents overshooting toward 0,0)
-                                if (distance === 0 || distance <= desiredDistance) {
-                                    console.log("WS move: already within desired distance", { distance, desiredDistance });
-                                    delete player.targetX;
-                                    delete player.targetY;
-                                    break;
+                                const approachCoords = calculateApproachCoords(player, enemy);
+                                if (approachCoords) {
+                                    [player.targetX, player.targetY] = approachCoords;
                                 }
-                                const ratio = (distance - desiredDistance) / distance;
-                                const targetCenterX = playerCenterX + dx * ratio;
-                                const targetCenterY = playerCenterY + dy * ratio;
-                                player.targetX = targetCenterX - 16;
-                                player.targetY = targetCenterY - 16;
-                                console.log("WS move: set target", { targetX: player.targetX, targetY: player.targetY });
                             } else if (typeof x === "number" && typeof y === "number") {
                                 player.targetX = x;
                                 player.targetY = y;
@@ -395,21 +377,9 @@ async function startServer() {
                             const enemy = gameState.enemies.find(e => e.id === enemyId);
                             console.log("WS attack handler", { currentPlayerId, enemyId, hasPlayer: !!player, hasEnemy: !!enemy });
                             if (player && enemy) {
-                                const playerCenterX = player.x + 16;
-                                const playerCenterY = player.y + 16;
-                                const enemyCenterX = enemy.x + 12;
-                                const enemyCenterY = enemy.y + 12;
-                                const dx = enemyCenterX - playerCenterX;
-                                const dy = enemyCenterY - playerCenterY;
-                                const distance = Math.hypot(dx, dy);
-                                const approachMargin = 3;
-                                const desiredDistance = Math.max(0, player.attackRange - approachMargin);
-                                if (distance > desiredDistance && distance > 0) {
-                                    const ratio = (distance - desiredDistance) / distance;
-                                    const targetCenterX = playerCenterX + dx * ratio;
-                                    const targetCenterY = playerCenterY + dy * ratio;
-                                    player.targetX = targetCenterX - 16;
-                                    player.targetY = targetCenterY - 16;
+                                const approachCoords = calculateApproachCoords(player, enemy);
+                                if (approachCoords) {
+                                    [player.targetX, player.targetY] = approachCoords;
                                 }
                             }
                             // Try an immediate attack; subsequent hits handled by server loop
@@ -425,19 +395,13 @@ async function startServer() {
                             if (typeof targetPlayerId !== "string" || !targetPlayerId) break;
                             if (targetPlayerId === currentPlayerId) break;
 
-                            const attacker = gameState.players[currentPlayerId];
+                            const bonker = gameState.players[currentPlayerId];
                             const target = gameState.players[targetPlayerId];
-                            if (!attacker || !target) break;
+                            if (!bonker || !target) break;
 
-                            const attackerCenterX = attacker.x + 16;
-                            const attackerCenterY = attacker.y + 16;
-                            const targetCenterX = target.x + 16;
-                            const targetCenterY = target.y + 16;
-                            const dx = targetCenterX - attackerCenterX;
-                            const dy = targetCenterY - attackerCenterY;
-                            const distance = Math.hypot(dx, dy);
+                            const distance = calculateTargetDistance(bonker, target);
 
-                            if (distance > attacker.attackRange) {
+                            if (distance > bonker.attackRange) {
                                 break;
                             }
 
