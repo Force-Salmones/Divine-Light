@@ -1,5 +1,5 @@
 import { makeGameStateSnapshot } from "@/api/makeSnapshot";
-import { wss } from "..";
+import { wss } from "../init/startServer";
 
 
 export function broadcastGameState() {

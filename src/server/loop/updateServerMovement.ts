@@ -75,7 +75,7 @@ export function updateServerMovement(deltaSeconds: number) {
                     if (distance <= enemy.attackRange) {
                         const now = Date.now() / 1000;
                         const timeSinceLast = now - (enemy.lastAttackTime ?? 0);
-                        if (timeSinceLast >= enemy.attackSpeed) {
+                        if (timeSinceLast >= 1 / enemy.attackSpeed) {
                             enemy.lastAttackTime = now;
                             const damage = rollEnemyDamage(enemy, player);
                             if (damage > 0) {

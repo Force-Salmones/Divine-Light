@@ -1,6 +1,6 @@
-import { runtimeState, wss, httpServer } from "..";
+import { runtimeState } from "..";
 import { persistAllPlayers } from "./persistPlayer";
-
+import { wss, httpServer } from "../init/startServer";
 
 export async function shutdown(reason: string) {
     if (runtimeState.shuttingDown) return;
