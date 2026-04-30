@@ -16,7 +16,7 @@
         "aggressive": false,
         "retreats": false,
         "drops": {},
-        "size": 24
+        "size": 25
     },
     "1":
     {
@@ -29,14 +29,14 @@
         "damageType": "physical",
         "attackSpeed": 1,
         "attackRange": 50,
-        "defense": 15,
+        "defense": 12,
         "resistance": 0,
-        "speed": 60,
+        "speed": 75,
         "reSpawnTime": 10,
         "aggressive": false,
         "retreats": false,
         "drops": {},
-        "size": 24
+        "size": 25
     },
     "2":
     {
@@ -45,13 +45,13 @@
         "experience": 100,
         "gold": 100,
         "health": 750,
-        "damage": 150,
+        "damage": 80,
         "damageType": "physical",
         "attackSpeed": 1,
-        "attackRange": 50,
-        "defense": 30,
-        "resistance": 0,
-        "speed": 30,
+        "attackRange": 120,
+        "defense": 25,
+        "resistance": 10,
+        "speed": 25,
         "reSpawnTime": 10,
         "aggressive": false,
         "retreats": false,

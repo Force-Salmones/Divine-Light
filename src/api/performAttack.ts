@@ -2,6 +2,7 @@ import { gameState, type Enemy, type Player } from "./gamestate";
 import { scheduleMobRespawn } from "../server/respawn";
 import { defeatEnemy } from "./defeatEnemy";
 import { rollPhysicalDamage } from "./calcDamage";
+import { PLAYER_SIZE } from "../constants.js";
 
 export interface AttackResult {
     success: boolean;
@@ -22,11 +23,11 @@ export function performAttack(playerId: string, enemyId: number): AttackResult |
         return null;
     }
 
-    // Use sprite centers for distance (player 32x32, enemy 24x24)
-    const playerCenterX = player.x + 16;
-    const playerCenterY = player.y + 16;
-    const enemyCenterX = enemy.x + 12;
-    const enemyCenterY = enemy.y + 12;
+    // Use sprite centers for distance
+    const playerCenterX = player.x + PLAYER_SIZE / 2;
+    const playerCenterY = player.y + PLAYER_SIZE / 2;
+    const enemyCenterX = enemy.x + enemy.size / 2;
+    const enemyCenterY = enemy.y + enemy.size / 2;
     const dx = enemyCenterX - playerCenterX;
     const dy = enemyCenterY - playerCenterY;
     const distance = Math.hypot(dx, dy);

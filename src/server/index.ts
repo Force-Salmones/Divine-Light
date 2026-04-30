@@ -1,9 +1,8 @@
 import express from "express";
-import type { Request, Response, NextFunction } from "express";
+import type { Request, Response } from "express";
 import { config } from "../config";
 import { handlerMovePlayer } from "../api/handlerMovePlayer";
 import { handlerAttackEnemy } from "../api/handlerAttackEnemy";
-import { updateServerMovement, updateAutomaticAttack } from "./updateServerMovement";
 import { gameState } from "../api/gamestate";
 import { makeGameStateSnapshot } from "../api/makeSnapshot";
 
@@ -16,105 +15,30 @@ import { WebSocketServer } from "ws";
 import { getAllMobs } from "@/db/queries/mobs";
 import { adminChatCommands, type ChatCommandContext } from "./chatCommands";
 import { initChatService, broadcastChatMessage, sendChatToPlayer } from "./chatService";
-import { getUserById, updateUser } from "../db/queries/users";
+import { getUserById } from "../db/queries/users";
 import { recalcPlayerDerivedStats } from "../api/recalcPlayerStats";
 import { handlerLogin } from "../api/handlerLogin";
 import { handlerLogout } from "../api/handlerLogout";
-import { validateJWT } from "../auth/auth";
+import { requireJwtForApi, requireJwtForApp, validateJWT } from "@/auth/jwt";
 import { calculateApproachCoords } from "../game/logic/movement/calculateApproachCoords";
 import { calculateTargetDistance } from "@/game/logic/movement/calculateTargetDistance";
+import { getJwtFromReq } from "@/auth/jwt";
+import { sendWsToPlayer } from "./ws/sendWsToPlayer";
+import { broadcastGameState } from "../server/ws/broadcastGameState";
+import { updateServerMovement } from "../server/loop/updateServerMovement";
+import { updateAutomaticAttack } from "../server/loop/updateAutomaticAttack";
+import { persistAllPlayers, persistPlayer } from "./services/persistPlayer";
+import { shutdown } from "./services/shutdown";
 
 const app = express();
 
-const TICK_INTERVAL_MS = 100;
-let lastTick = Date.now();
-let wss: WebSocketServer | null = null;
-let httpServer: any = null;
-let shuttingDown = false;
+export const runtimeState = {
+    shuttingDown: false,
+};
 
-// Tracks the active WS connection per playerId (prevents two tabs controlling the same character)
-const wsByPlayerId = new Map<string, any>();
+export const TICK_INTERVAL_MS = 100;
 
-function sendWsToPlayer(playerId: string, payload: any) {
-    const ws = wsByPlayerId.get(playerId);
-    if (!ws) return;
-    if (ws.readyState !== 1) return;
-    try {
-        ws.send(JSON.stringify(payload));
-    } catch (err) {
-        console.error("Failed to send ws payload", { playerId, payloadType: payload?.type }, err);
-    }
-}
-
-function parseCookies(cookieHeader: string | undefined): Record<string, string> {
-    const out: Record<string, string> = {};
-    if (!cookieHeader) return out;
-    const parts = cookieHeader.split(";");
-    for (const p of parts) {
-        const [k, ...rest] = p.trim().split("=");
-        if (!k) continue;
-        out[k] = decodeURIComponent(rest.join("="));
-    }
-    return out;
-}
-
-function getJwtFromReq(req: Request): string | null {
-    // Prefer cookie (browser + ws), fall back to Authorization header
-    const cookies = parseCookies(req.headers.cookie);
-    if (cookies.jwt) return cookies.jwt;
-
-    const auth = req.get("Authorization");
-    if (auth && auth.startsWith("Bearer ")) {
-        return auth.slice(7);
-    }
-
-    return null;
-}
-
-function requireJwtForApp(req: Request, res: Response, next: NextFunction) {
-    try {
-        const token = getJwtFromReq(req);
-        if (!token) {
-            return res.redirect(302, "/home/");
-        }
-        const userId = validateJWT(token, config.jwt_secret);
-        (req as any).userId = userId;
-        return next();
-    } catch {
-        return res.redirect(302, "/home/");
-    }
-}
-
-function requireJwtForApi(req: Request, res: Response, next: NextFunction) {
-    try {
-        const token = getJwtFromReq(req);
-        if (!token) {
-            return res.status(401).json({ success: false, message: "Unauthorized" });
-        }
-        const userId = validateJWT(token, config.jwt_secret);
-        (req as any).userId = userId;
-        return next();
-    } catch {
-        return res.status(401).json({ success: false, message: "Unauthorized" });
-    }
-}
-
-function broadcastGameState() {
-    if (!wss) return;
-
-    // IMPORTANT: we must send a per-client snapshot (selfId/player/selectedEnemyId/etc differ per client)
-    wss.clients.forEach((client: any) => {
-        try {
-            if (client.readyState !== 1) return;
-            const pid: string | undefined = client.playerId;
-            if (!pid) return;
-            const snapshot = makeGameStateSnapshot(pid);
-            client.send(JSON.stringify({ type: "gameState", gameState: snapshot }));
-        } catch (err) {
-            console.error("Failed to broadcast snapshot", err);
-        }
-    });
-}
+export let lastTick = Date.now();
 
 function startTickLoop() {
     setInterval(() => {
@@ -127,77 +51,17 @@ function startTickLoop() {
     }, TICK_INTERVAL_MS);
 }
 
+export let wss: WebSocketServer | null = null;
+export let httpServer: any = null;
+export let shuttingDown = false;
+
+// Tracks the active WS connection per playerId (prevents two tabs controlling the same character)
+export const wsByPlayerId = new Map<string, any>();
+
 export async function initializeEnemies() {
     const dbMobs = await getAllMobs();
     const enemies = await Promise.all(dbMobs.map((mob) => loadEnemy(mob)));
     gameState.enemies = enemies;
-
-    // Players are now loaded on-demand from JWT on websocket connection.
-}
-
-async function persistPlayer(playerId: string) {
-    const player = gameState.players[playerId];
-    if (!player) return;
-    try {
-        await updateUser(
-            player.id,
-            player.level,
-            player.experience,
-            player.unallocatedPoints,
-            player.STR,
-            player.VIT,
-            player.DEX,
-            player.LUK,
-            player.INT,
-            player.WIS,
-            player.inventory,
-            player.gold,
-            Math.round(player.x),
-            Math.round(player.y)
-        );
-    } catch (err) {
-        console.error("Failed to persist player", playerId, err);
-    }
-}
-
-async function persistAllPlayers() {
-    const ids = Object.keys(gameState.players);
-    await Promise.all(ids.map((id) => persistPlayer(id)));
-}
-
-async function shutdown(reason: string) {
-    if (shuttingDown) return;
-    shuttingDown = true;
-    console.log("Shutdown initiated:", reason);
-    try {
-        await persistAllPlayers();
-    } catch (err) {
-        console.error("Error persisting players during shutdown", err);
-    }
-
-    try {
-        if (wss) {
-            wss.clients.forEach((client: any) => {
-                try { client.close(); } catch {}
-            });
-            try { wss.close(); } catch {}
-        }
-    } catch (err) {
-        console.error("Error closing WebSocket server", err);
-    }
-
-    if (httpServer) {
-        try {
-            httpServer.close(() => {
-                process.exit(0);
-            });
-        } catch (err) {
-            console.error("Error closing HTTP server", err);
-            process.exit(1);
-        }
-    } else {
-        process.exit(0);
-    }
 }
 
 async function startServer() {
@@ -488,10 +352,6 @@ app.post("/api/create-user", handlerCreateUser);
 
 app.post("/api/login", handlerLogin);
 app.post("/api/logout", handlerLogout);
-
-// Legacy HTTP gameplay endpoints (kept for compatibility)
-app.post("/api/move-player", requireJwtForApi, handlerMovePlayer);
-app.post("/api/attack-enemy", requireJwtForApi, handlerAttackEnemy);
 
 // Require auth to load the game client
 // Disable caching in dev to avoid one client running stale JS while another runs fresh JS.

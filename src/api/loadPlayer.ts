@@ -36,7 +36,7 @@ export async function loadPlayer(playerId: string): Promise<Player | undefined> 
         attackSpeed: 1,
         lastAttackTime: 0,
         inventory: dbUser.inventory ?? { equipment: {}, items: {} },
-        size: 32
+        size: 32,
     };
     return player;
 }

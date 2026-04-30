@@ -1,5 +1,5 @@
 import { createUser } from "../db/queries/users";
-import { hashPassword } from "../auth/auth";
+import { hashPassword } from "../auth/password";
 import type { Request, Response, NextFunction } from "express";
 
 export async function handlerCreateUser(req: Request, res: Response, next: NextFunction) {

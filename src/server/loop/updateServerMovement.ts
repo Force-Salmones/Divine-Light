@@ -1,34 +1,9 @@
-import { gameState, type Player, type Enemy } from "../api/gamestate";
-import { performAttack } from "../api/performAttack";
-import { updateRespawns } from "./respawn";
-import { rollEnemyDamage } from "../api/calcDamage";
-import { sendChatToPlayer } from "./chatService";
+import { rollEnemyDamage } from "@/api/calcDamage";
+import { gameState, type Enemy } from "@/api/gamestate";
+import { PLAYER_SIZE, APPROACH_MARGIN } from "@/app/constants";
+import { updateRespawns } from "../respawn";
+import { respawnPlayer } from "./respawnPlayer";
 
-function respawnPlayer(player: Player) {
-    // For now: treat 0 HP as "death" and instantly respawn.
-    sendChatToPlayer(player.id, "You were defeated! Respawning...", true);
-
-    player.x = 970;
-    player.y = 374;
-    delete player.targetX;
-    delete player.targetY;
-
-    // Heal on respawn (prevents getting stuck at 0 HP)
-    player.currHealth = player.maxHealth;
-    player.currMana = player.maxMana;
-
-    // Stop any server-side auto-attack selection
-    gameState.selectedTargets[player.id] = null;
-
-    // Drop aggro from enemies currently targeting this player
-    for (const enemy of gameState.enemies) {
-        if (enemy.targetPlayerId === player.id) {
-            enemy.targetPlayerId = null;
-            enemy.targetX = enemy.homeX;
-            enemy.targetY = enemy.homeY;
-        }
-    }
-}
 
 export function updateServerMovement(deltaSeconds: number) {
     // Move all players with targets
@@ -76,22 +51,21 @@ export function updateServerMovement(deltaSeconds: number) {
                     enemy.targetY = enemy.homeY;
                 } else {
                     // Chase the player if out of range
-                    const enemyCenterX = enemy.x + 12;
-                    const enemyCenterY = enemy.y + 12;
-                    const playerCenterX = player.x + 16;
-                    const playerCenterY = player.y + 16;
+                    const enemyCenterX = enemy.x + enemy.size / 2;
+                    const enemyCenterY = enemy.y + enemy.size / 2;
+                    const playerCenterX = player.x + PLAYER_SIZE / 2;
+                    const playerCenterY = player.y + PLAYER_SIZE / 2;
                     const dx = playerCenterX - enemyCenterX;
                     const dy = playerCenterY - enemyCenterY;
                     const distance = Math.hypot(dx, dy);
-                    const approachMargin = 3;
-                    const desiredDistance = Math.max(0, enemy.attackRange - approachMargin);
+                    const desiredDistance = Math.max(0, enemy.attackRange - APPROACH_MARGIN);
 
                     if (distance > desiredDistance && distance > 0) {
                         const ratio = (distance - desiredDistance) / distance;
                         const targetCenterX = enemyCenterX + dx * ratio;
                         const targetCenterY = enemyCenterY + dy * ratio;
-                        enemy.targetX = targetCenterX - 12; // enemy sprite 24x24
-                        enemy.targetY = targetCenterY - 12;
+                        enemy.targetX = targetCenterX - enemy.size / 2;
+                        enemy.targetY = targetCenterY - enemy.size / 2;
                     } else {
                         enemy.targetX = undefined;
                         enemy.targetY = undefined;
@@ -219,13 +193,4 @@ export function updateServerMovement(deltaSeconds: number) {
 
     // Also advance respawn logic once per tick
     void updateRespawns();
-}
-
-export function updateAutomaticAttack() {
-    // Perform automatic attacks per selectedTargets
-    for (const [playerId, enemyId] of Object.entries(gameState.selectedTargets)) {
-        if (typeof enemyId === "number") {
-            performAttack(playerId, enemyId);
-        }
-    }
 }

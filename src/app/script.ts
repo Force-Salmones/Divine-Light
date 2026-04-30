@@ -1,3 +1,5 @@
+import { INFO_PANEL_SPRITE_SIZE, PLAYER_SIZE } from "./constants.js";
+
 const canvas = document.getElementById("game") as HTMLCanvasElement;
 const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
 const world = new Image();
@@ -139,7 +141,7 @@ let optionsButton: HTMLButtonElement | null = null;
 let optionsContainer: HTMLDivElement | null = null;
 
 // Client-side types (subset mirrored from server for rendering)
-type Player = {
+type LocalPlayer = {
     id: string;
     name: string;
     level: number;
@@ -172,7 +174,7 @@ type Player = {
     };
 };
 
-type Enemy = {
+type LocalEnemy = {
     id: number;
     name: string;
     level: number;
@@ -181,6 +183,7 @@ type Enemy = {
     x: number;
     y: number;
     sprite: string;
+    size: number;
 };
 
 type AttackEvent = {
@@ -193,16 +196,16 @@ type AttackEvent = {
     enemyDead: boolean;
 };
 
-type GameState = {
+type LocalGameState = {
     // authoritative fields
-    players: Record<string, Player>;
-    enemies: Enemy[];
+    players: Record<string, LocalPlayer>;
+    enemies: LocalEnemy[];
     selectedTargets?: Record<string, number | null>;
     lastAttackEvents?: AttackEvent[];
 
     // per-client fields
     selfId: string;
-    player: Player;
+    player: LocalPlayer;
     selectedEnemyId: number | null;
 
     lastAttackResult?: {
@@ -221,7 +224,7 @@ type GameState = {
     };
 }
 
-let gameState: GameState | null = null;
+let gameState: LocalGameState | null = null;
 const sprites: Map<string, HTMLImageElement> = new Map();
 let selectedEntity:
     | { type: 'player'; id: string }
@@ -258,8 +261,7 @@ let damageNumbers: DamageNumber[] = [];
 function getEntityAt(x: number, y: number) {
     if (!gameState) return null;
 
-    const playerWidth = 32;
-    const playerHeight = 32;
+    const [playerWidth, playerHeight] = [PLAYER_SIZE, PLAYER_SIZE];
 
     // Prefer other players over self if overlapping.
     const players = Object.values(gameState.players ?? {});
@@ -279,9 +281,9 @@ function getEntityAt(x: number, y: number) {
 
     const clickedEnemy = gameState.enemies.find(enemy =>
         x >= enemy.x &&
-        x <= enemy.x + 24 &&
+        x <= enemy.x + enemy.size &&
         y >= enemy.y &&
-        y <= enemy.y + 24
+        y <= enemy.y + enemy.size
     );
 
     return clickedEnemy ? { type: 'enemy' as const, id: clickedEnemy.id } : null;
@@ -318,12 +320,12 @@ function drawAttackRangeCircle(radius: number) {
     ctx.beginPath();
     ctx.strokeStyle = 'rgba(255, 255, 0, 0.35)';
     ctx.lineWidth = 2;
-    ctx.arc(gameState.player.x + 16, gameState.player.y + 16, radius, 0, Math.PI * 2);
+    ctx.arc(gameState.player.x + PLAYER_SIZE / 2, gameState.player.y + PLAYER_SIZE / 2, radius, 0, Math.PI * 2);
     ctx.stroke();
     ctx.restore();
 }
 
-function drawSelectedEnemyPanel(enemy: Enemy) {
+function drawSelectedEnemyPanel(enemy: LocalEnemy) {
     const vp = getWorldViewportRectCss();
     const panelX = vp.left + 10;
     const panelY = vp.top + 10;
@@ -350,7 +352,7 @@ function drawSelectedEnemyPanel(enemy: Enemy) {
 
     // Draw enemy sprite on the right side of the panel
     const spriteImg = sprites.get(enemy.sprite);
-    const spriteSize = 32;
+    const spriteSize = INFO_PANEL_SPRITE_SIZE;
     const spriteX = panelX + panelWidth - spriteSize - 8;
     const spriteY = panelY + (panelHeight - spriteSize) / 2;
     if (spriteImg) {
@@ -363,33 +365,33 @@ function drawSelectedEnemyPanel(enemy: Enemy) {
     ctx.restore();
 }
 
-function isWithinAttackRange(enemy: Enemy) {
+function isWithinAttackRange(enemy: LocalEnemy) {
     if (!gameState) return false;
     const player = gameState.player;
-    const playerCenterX = player.x + 16; // player sprite 32x32
-    const playerCenterY = player.y + 16;
-    const enemyCenterX = enemy.x + 12;   // enemy sprite 24x24
-    const enemyCenterY = enemy.y + 12;
+    const playerCenterX = player.x + PLAYER_SIZE / 2;
+    const playerCenterY = player.y + PLAYER_SIZE / 2;
+    const enemyCenterX = enemy.x + enemy.size / 2;
+    const enemyCenterY = enemy.y + enemy.size / 2;
     const dx = enemyCenterX - playerCenterX;
     const dy = enemyCenterY - playerCenterY;
     return Math.hypot(dx, dy) <= player.attackRange;
 }
 
-function isWithinPlayerAttackRange(target: Player) {
+function isWithinPlayerAttackRange(target: LocalPlayer) {
     if (!gameState) return false;
     const attacker = gameState.player;
     if (!attacker) return false;
 
-    const attackerCenterX = attacker.x + 16;
-    const attackerCenterY = attacker.y + 16;
-    const targetCenterX = target.x + 16;
-    const targetCenterY = target.y + 16;
+    const attackerCenterX = attacker.x + PLAYER_SIZE / 2;
+    const attackerCenterY = attacker.y + PLAYER_SIZE / 2;
+    const targetCenterX = target.x + PLAYER_SIZE / 2;
+    const targetCenterY = target.y + PLAYER_SIZE / 2;
     const dx = targetCenterX - attackerCenterX;
     const dy = targetCenterY - attackerCenterY;
     return Math.hypot(dx, dy) <= attacker.attackRange;
 }
 
-function drawSelectedPlayerPanel(player: Player) {
+function drawSelectedPlayerPanel(player: LocalPlayer) {
     const vp = getWorldViewportRectCss();
     const panelX = vp.left + 10;
     const panelY = vp.top + 10;
@@ -416,7 +418,7 @@ function drawSelectedPlayerPanel(player: Player) {
 
     // Draw player sprite on the right side of the panel
     const spriteImg = sprites.get(player.sprite);
-    const spriteSize = 32;
+    const spriteSize = INFO_PANEL_SPRITE_SIZE;
     const spriteX = panelX + panelWidth - spriteSize - 8;
     const spriteY = panelY + (panelHeight - spriteSize) / 2;
     if (spriteImg) {
@@ -507,7 +509,7 @@ async function refreshSpritesIfNeeded() {
     });
 }
 
-async function handleGameStateMessage(loadedGameState: GameState) {
+async function handleGameStateMessage(loadedGameState: LocalGameState) {
     // Fallback defaults for missing values
     if (loadedGameState.player.speed === undefined) {
         loadedGameState.player.speed = 120;
@@ -549,8 +551,9 @@ async function handleGameStateMessage(loadedGameState: GameState) {
     } else if (gameState.lastAttackResult && gameState.lastAttackResult.timestamp > lastProcessedAttackTimestamp) {
         lastProcessedAttackTimestamp = gameState.lastAttackResult.timestamp;
         const ar = gameState.lastAttackResult;
+        const enemy_size = gameState.enemies.find((e) => e.id === ar.enemyId)?.size ?? 12;
         // Player -> enemy damage numbers (white)
-        spawnDamageNumber(ar.x + 12, ar.y, ar.damage.toString(), 'white');
+        spawnDamageNumber(ar.x + enemy_size / 2, ar.y, ar.damage.toString(), 'white');
 
         // If the last attack killed the enemy, stop auto-attacking and clear selection.
         // This prevents automatically re-attacking or auto-selecting when the mob respawns.
@@ -567,7 +570,7 @@ async function handleGameStateMessage(loadedGameState: GameState) {
     if (incoming && incoming.timestamp > lastProcessedIncomingHitTimestamp) {
         lastProcessedIncomingHitTimestamp = incoming.timestamp;
         // Enemy -> player damage numbers (red)
-        spawnDamageNumber(incoming.x + 16, incoming.y, incoming.damage.toString(), 'red');
+        spawnDamageNumber(incoming.x + PLAYER_SIZE / 2, incoming.y, incoming.damage.toString(), 'red');
     }
 
     // Level-up effects (green floating text) for any player
@@ -577,7 +580,7 @@ async function handleGameStateMessage(loadedGameState: GameState) {
         const lastTs = lastProcessedLevelUpByPlayerId[p.id] ?? 0;
         if (evt.timestamp > lastTs) {
             lastProcessedLevelUpByPlayerId[p.id] = evt.timestamp;
-            spawnDamageNumber(p.x + 16, p.y, `Level ${evt.level}!`, 'lime');
+            spawnDamageNumber(p.x + PLAYER_SIZE / 2, p.y, `Level ${evt.level}!`, 'lime');
         }
     }
 
@@ -605,8 +608,8 @@ async function handleGameStateMessage(loadedGameState: GameState) {
             const key = `${evt.timestamp}:${evt.playerId}:${evt.enemyId}:${evt.damage}`;
             if (processedOtherAttackEventKeys.has(key)) continue;
             processedOtherAttackEventKeys.set(key, evt.timestamp);
-
-            spawnDamageNumber(evt.x + 12, evt.y, String(evt.damage), '#d0d0d0');
+            const enemy_size = gameState.enemies.find((e) => e.id === evt.enemyId)?.size ?? 12;
+            spawnDamageNumber(evt.x + enemy_size, evt.y, String(evt.damage), '#d0d0d0');
         }
 
         // Advance baseline (monotonic)
@@ -662,7 +665,7 @@ function connectGameSocket() {
         try {
             const data = JSON.parse(event.data);
             if (data.type === 'gameState') {
-                await handleGameStateMessage(data.gameState as GameState);
+                await handleGameStateMessage(data.gameState as LocalGameState);
             } else if (data.type === 'chat') {
                 const msg: ChatMessage = {
                     from: typeof data.from === 'string' ? data.from : undefined,
@@ -675,7 +678,7 @@ function connectGameSocket() {
                 const x = typeof data.x === 'number' ? data.x : undefined;
                 const y = typeof data.y === 'number' ? data.y : undefined;
                 if (x !== undefined && y !== undefined) {
-                    spawnDamageNumber(x + 16, y, 'bonk', 'white');
+                    spawnDamageNumber(x + PLAYER_SIZE / 2, y, 'bonk', 'white');
                 }
             }
         } catch (err) {
@@ -1073,54 +1076,56 @@ function render() {
     // Draw other players first (so local player is on top)
     for (const p of Object.values(gameState.players ?? {})) {
         if (p.id === gameState.selfId) continue;
-
+        const pSize = PLAYER_SIZE;
         const img = sprites.get(p.sprite);
         if (img) {
-            ctx.drawImage(img, p.x, p.y, 32, 32);
+            ctx.drawImage(img, p.x, p.y, pSize, pSize);
         } else {
             ctx.fillStyle = 'rgba(0, 140, 255, 0.65)';
-            ctx.fillRect(p.x, p.y, 32, 32);
+            ctx.fillRect(p.x, p.y, pSize, pSize);
         }
 
         if (p.name) {
-            drawNameTag(p.x, p.y, 32, p.name);
+            drawNameTag(p.x, p.y, pSize, p.name);
         }
 
         if (selectedEntity?.type === 'player' && selectedEntity.id === p.id) {
-            drawOutline(p.x, p.y, 32, 32);
+            drawOutline(p.x, p.y, pSize, pSize);
         }
     }
 
     // Draw local player
+    const pSize = PLAYER_SIZE;
     const playerImg = sprites.get(gameState.player.sprite);
     if (playerImg) {
-        ctx.drawImage(playerImg, gameState.player.x, gameState.player.y, 32, 32);
+        ctx.drawImage(playerImg, gameState.player.x, gameState.player.y, pSize, pSize);
     } else {
         ctx.fillStyle = 'blue';
-        ctx.fillRect(gameState.player.x, gameState.player.y, 32, 32);
+        ctx.fillRect(gameState.player.x, gameState.player.y, pSize, pSize);
     }
 
     // Name tag above local player
     if (gameState.player.name) {
-        drawNameTag(gameState.player.x, gameState.player.y, 32, gameState.player.name);
+        drawNameTag(gameState.player.x, gameState.player.y, pSize, gameState.player.name);
     }
 
     if (selectedEntity?.type === 'player' && selectedEntity.id === gameState.selfId) {
-        drawOutline(gameState.player.x, gameState.player.y, 32, 32);
+        drawOutline(gameState.player.x, gameState.player.y, pSize, pSize);
     }
 
     // Draw enemies
     gameState.enemies.forEach(enemy => {
         const enemyImg = sprites.get(enemy.sprite);
+        const size = enemy.size
         if (enemyImg) {
-            ctx.drawImage(enemyImg, enemy.x, enemy.y, 24, 24);
+            ctx.drawImage(enemyImg, enemy.x, enemy.y, size, size);
         } else {
             ctx.fillStyle = 'green';
-            ctx.fillRect(enemy.x, enemy.y, 24, 24);
+            ctx.fillRect(enemy.x, enemy.y, size, size);
         }
 
         if (selectedEntity?.type === 'enemy' && selectedEntity.id === enemy.id) {
-            drawOutline(enemy.x, enemy.y, 24, 24);
+            drawOutline(enemy.x, enemy.y, size, size);
         }
     });
 
@@ -1284,5 +1289,5 @@ canvas.addEventListener('click', (event) => {
 
     stopAttackLoop();
     selectedEntity = null;
-    movePlayer(x - 16, y - 16);
+    movePlayer(x - PLAYER_SIZE / 2, y - PLAYER_SIZE / 2);
 });

@@ -1,6 +1,7 @@
 import { gameState, type Player, type Enemy } from "./gamestate";
 import type { Request, Response, NextFunction } from "express";
 import { makeGameStateSnapshot } from "./makeSnapshot";
+import { PLAYER_SIZE } from "../constants.js";
 
 export async function handlerMovePlayer(req: Request, res: Response, next: NextFunction) {
     const { x, y, enemyId } = req.body as { x?: number; y?: number; enemyId?: number };
@@ -23,10 +24,10 @@ export async function handlerMovePlayer(req: Request, res: Response, next: NextF
         }
 
         // Use sprite centers for accurate range checks and targeting
-        const playerCenterX = player.x + 16; // player sprite 32x32
-        const playerCenterY = player.y + 16;
-        const enemyCenterX = enemy.x + 12;  // enemy sprite 24x24
-        const enemyCenterY = enemy.y + 12;
+        const playerCenterX = player.x + PLAYER_SIZE / 2;
+        const playerCenterY = player.y + PLAYER_SIZE / 2;
+        const enemyCenterX = enemy.x + enemy.size / 2;
+        const enemyCenterY = enemy.y + enemy.size / 2;
 
         const dx = enemyCenterX - playerCenterX;
         const dy = enemyCenterY - playerCenterY;
@@ -53,8 +54,8 @@ export async function handlerMovePlayer(req: Request, res: Response, next: NextF
         const targetCenterY = playerCenterY + dy * ratio;
 
         // Convert back to top-left for movement system
-        player.targetX = targetCenterX - 16;
-        player.targetY = targetCenterY - 16;
+        player.targetX = targetCenterX - PLAYER_SIZE / 2;
+        player.targetY = targetCenterY - PLAYER_SIZE / 2;
         return res.json({ success: true, gameState: makeGameStateSnapshot(resolvedPlayerId) });
     }
 

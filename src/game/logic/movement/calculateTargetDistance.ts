@@ -1,4 +1,4 @@
-import type { Enemy, Player } from "@/api/gamestate";
+import type { Enemy, Player } from "../../../api/gamestate";
 
 export function calculateTargetDistance(entity1: Player | Enemy, entity2: Player | Enemy) {
     const entity1CenterX = entity1.x + entity1.size /2;
