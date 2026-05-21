@@ -1,28 +1,36 @@
 {
-  "name": "bun-react-template",
-  "version": "0.1.0",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "dev": "bun src/server/index.ts | tee server.log",
-    "compile": "tsc --skipLibCheck --ignoreConfig --types bun --noEmit false --outDir public --rootDir src src/app/*.ts src/home/*.ts src/home/auth/*.ts src/home/signup/*.ts src/game/logic/movement/*.ts"
-  },
-  "dependencies": {
-    "2": "^3.0.0",
-    "argon": "^2.0.21",
-    "argon2": "^0.44.0",
-    "drizzle-orm": "^0.45.2",
-    "edgedb": "^2.0.1",
-    "express": "^5.2.1",
-    "jsonwebtoken": "^9.0.3",
-    "postgres": "^3.4.9",
-    "ws": "^8.20.0"
-  },
-  "devDependencies": {
-    "@types/bun": "^1.3.13",
-    "@types/express": "^5.0.6",
-    "@types/jsonwebtoken": "^9.0.10",
-    "@types/ws": "^8.18.1",
-    "drizzle-kit": "^0.31.10"
-  }
+	"name": "bun-react-template",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "bun src/server/index.ts | tee server.log",
+		"compile": "tsc --skipLibCheck --ignoreConfig --types bun --noEmit false --outDir public --rootDir src src/app/*.ts src/home/*.ts src/home/auth/*.ts src/home/signup/*.ts src/game/logic/movement/*.ts",
+		"lint": "eslint ."
+	},
+	"dependencies": {
+		"2": "^3.0.0",
+		"argon": "^2.0.21",
+		"argon2": "^0.44.0",
+		"drizzle-orm": "^0.45.2",
+		"edgedb": "^2.0.1",
+		"express": "^5.2.1",
+		"jsonwebtoken": "^9.0.3",
+		"postgres": "^3.4.9",
+		"ws": "^8.20.0"
+	},
+	"devDependencies": {
+		"@eslint/js": "^10.0.1",
+		"@types/bun": "^1.3.13",
+		"@types/eslint-plugin-security": "^3.0.1",
+		"@types/express": "^5.0.6",
+		"@types/jsonwebtoken": "^9.0.10",
+		"@types/ws": "^8.18.1",
+		"drizzle-kit": "^0.31.10",
+		"eslint": "^10.4.0",
+		"eslint-plugin-security": "^4.0.0",
+		"globals": "^17.6.0",
+		"jiti": "^2.7.0",
+		"typescript-eslint": "^8.59.4"
+	}
 }
