@@ -1,4 +1,10 @@
-import type { GameStateSnapshot, StatKey } from "../../api/gamestate";
+/**
+ * Shared WebSocket message types.
+ *
+ * IMPORTANT: This module must stay platform-agnostic (no imports from server/client code).
+ */
+
+import type { GameStateSnapshot, StatKey } from "./gamestate.js";
 
 export type ClientToServerMessage =
 	| { type: "chat"; text: string }

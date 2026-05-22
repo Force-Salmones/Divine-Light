@@ -67,6 +67,28 @@ export function registerHttpRoutes(app: Express) {
 			},
 		}),
 	);
+
+	// Additional emitted modules used by /app/script.js (tsc output; not bundled)
+	app.use(
+		"/client",
+		requireJwtForApp,
+		express.static("./public/client", {
+			setHeaders: (res) => {
+				res.setHeader("Cache-Control", "no-store");
+			},
+		}),
+	);
+
+	// Shared protocol modules imported by the browser build
+	app.use(
+		"/shared",
+		requireJwtForApp,
+		express.static("./public/shared", {
+			setHeaders: (res) => {
+				res.setHeader("Cache-Control", "no-store");
+			},
+		}),
+	);
 	app.use("/home", express.static("./public/home"));
 	app.use("/signup", express.static("./public/home/signup"));
 	app.use("/login", express.static("./public/home/auth"));
