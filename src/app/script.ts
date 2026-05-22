@@ -208,7 +208,7 @@ type LocalGameState = {
     player: LocalPlayer;
     selectedEnemyId: number | null;
 
-    lastAttackResult?: {
+    lastAttackEvent?: {
         enemyId: number;
         damage: number;
         timestamp: number;
@@ -527,8 +527,8 @@ async function handleGameStateMessage(loadedGameState: LocalGameState) {
     // Avoid replaying old attack events on initial load: initialize baselines
     // from the first snapshot without spawning damage numbers.
     if (!hasInitializedAttackHistory) {
-        if (gameState.lastAttackResult) {
-            lastProcessedAttackTimestamp = gameState.lastAttackResult.timestamp;
+        if (gameState.lastAttackEvent) {
+            lastProcessedAttackTimestamp = gameState.lastAttackEvent.timestamp;
         }
         if (gameState.lastIncomingHit) {
             lastProcessedIncomingHitTimestamp = gameState.lastIncomingHit.timestamp;
@@ -548,9 +548,9 @@ async function handleGameStateMessage(loadedGameState: LocalGameState) {
         }
 
         hasInitializedAttackHistory = true;
-    } else if (gameState.lastAttackResult && gameState.lastAttackResult.timestamp > lastProcessedAttackTimestamp) {
-        lastProcessedAttackTimestamp = gameState.lastAttackResult.timestamp;
-        const ar = gameState.lastAttackResult;
+    } else if (gameState.lastAttackEvent && gameState.lastAttackEvent.timestamp > lastProcessedAttackTimestamp) {
+        lastProcessedAttackTimestamp = gameState.lastAttackEvent.timestamp;
+        const ar = gameState.lastAttackEvent;
         const enemy_size = gameState.enemies.find((e) => e.id === ar.enemyId)?.size ?? 12;
         // Player -> enemy damage numbers (white)
         spawnDamageNumber(ar.x + enemy_size / 2, ar.y, ar.damage.toString(), 'white');

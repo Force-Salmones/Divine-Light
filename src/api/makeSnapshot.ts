@@ -1,25 +1,38 @@
-import { gameState, type GameStateSnapshot } from "./gamestate";
+import { serverGameState } from "./gamestate";
+import type {
+	GameStateSnapshot,
+	PlayerPublic,
+} from "../shared/protocol/gamestate.js";
+import { playerToPublic } from "./playerToPublic";
 
 /**
  * Builds a per-player snapshot from the authoritative server state.
- * This is what we send to the browser over WS / HTTP.
+ * Sent to the browser over WS.
  */
 export function makeGameStateSnapshot(playerId: string): GameStateSnapshot {
-    const player = gameState.players[playerId];
-    if (!player) {
-        throw new Error(`Player not found for snapshot: ${playerId}`);
-    }
+	const player = serverGameState.players[playerId];
+	if (!player) {
+		throw new Error(`Player not found for snapshot: ${playerId}`);
+	}
 
-    return {
-        players: gameState.players,
-        enemies: gameState.enemies,
-        selectedTargets: gameState.selectedTargets,
-        lastAttackEvents: gameState.lastAttackEvents,
+	const players: Record<string, PlayerPublic> = {};
 
-        selfId: playerId,
-        player,
-        selectedEnemyId: gameState.selectedTargets[playerId] ?? null,
-        lastAttackResult: player.lastAttackResult,
-        lastIncomingHit: player.lastIncomingHit,
-    };
+	for (const player in serverGameState.players) {
+		if (!serverGameState.players[player]) {
+			continue;
+		}
+		players[player] = playerToPublic(serverGameState.players[player]);
+	}
+
+	return {
+		players: players,
+		enemies: serverGameState.enemies,
+		selfId: playerId,
+		player: player,
+		selectedEnemyId: serverGameState.selectedTargets[playerId] ?? null,
+		lastAttackEvents: serverGameState.lastAttackEvents,
+		// Temporary for compatibility
+		lastAttackEvent: player.lastAttackEvent,
+		lastIncomingHit: player.lastIncomingHit,
+	};
 }
