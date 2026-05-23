@@ -1,7 +1,3 @@
-/**
- * Modular client entrypoint.
- */
-
 import type { AppContext } from "./appContext.js";
 import { createViewport, resizeCanvasToScreen } from "./render/viewport.js";
 import { createClientStore } from "./state/store.js";
@@ -19,10 +15,8 @@ import { applySnapshot } from "./state/applySnapshot.js";
 import { startGameLoop } from "./engine/loop.js";
 import { registerCanvasClickHandler } from "./input/clickHandler.js";
 import { sendChat, spendStat } from "./actions/gameActions.js";
+import { createLoadingScreenUI } from "./ui/loadingScreen.js";
 
-/**
- * Bootstrap and start the game client.
- */
 export function startApp() {
 	const canvas = document.getElementById("game") as HTMLCanvasElement | null;
 	if (!canvas) throw new Error("Canvas element #game not found");
@@ -32,6 +26,9 @@ export function startApp() {
 
 	// Ensure the body can host fixed-position overlays.
 	document.body.style.position = document.body.style.position || "relative";
+
+	const loadingScreen = createLoadingScreenUI();
+	let loadingHidden = false;
 
 	const worldImage = new Image();
 	const viewport = createViewport();
@@ -65,6 +62,10 @@ export function startApp() {
 			switch (msg.type) {
 				case "gameState":
 					await applySnapshot(app, msg.gameState);
+					if (!loadingHidden) {
+						loadingHidden = true;
+						loadingScreen.hide();
+					}
 					break;
 				case "chat":
 					chat.append({
@@ -115,6 +116,7 @@ export function startApp() {
 	}
 
 	worldImage.onload = () => {
+		loadingScreen.setText("Connecting...");
 		if (worldImage.naturalWidth && worldImage.naturalHeight) {
 			viewport.worldWidth = worldImage.naturalWidth;
 			viewport.worldHeight = worldImage.naturalHeight;
