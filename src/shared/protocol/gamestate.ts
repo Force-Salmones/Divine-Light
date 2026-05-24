@@ -1,4 +1,5 @@
 export type StatKey = "STR" | "VIT" | "DEX" | "LUK" | "INT" | "WIS";
+export const statKeys = ["STR", "VIT", "DEX", "LUK", "INT", "WIS"];
 
 export type AttackEvent = {
 	playerId: string;

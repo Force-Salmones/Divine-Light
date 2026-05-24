@@ -4,7 +4,7 @@ import type { Enemy } from "../state/gameState";
 
 export async function loadEnemy(mob: Mob): Promise<Enemy> {
 	const jsonRaw = await readFile(
-		new URL("../db/data/mobs.json", import.meta.url),
+		new URL("../../db/data/mobs.json", import.meta.url),
 		"utf8",
 	);
 	const jsonData = JSON.parse(jsonRaw);

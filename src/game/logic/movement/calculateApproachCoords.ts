@@ -1,5 +1,5 @@
-import type { Enemy } from "@/server/state/gameState.js";
-import type { Player } from "@/server/state/gameState.js";
+import type { Enemy } from "../../../server/state/gameState.js";
+import type { Player } from "../../../server/state/gameState.js";
 import { APPROACH_MARGIN } from "../../../constants.js";
 
 export function calculateApproachCoords(

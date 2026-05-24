@@ -1,5 +1,5 @@
-import type { Enemy } from "@/server/state/gameState";
-import type { Player } from "@/server/state/gameState";
+import type { Enemy } from "../../../server/state/gameState";
+import type { Player } from "../../../server/state/gameState";
 
 export function calculateTargetDistance(
 	entity1: Player | Enemy,

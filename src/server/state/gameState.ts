@@ -14,12 +14,16 @@ export type ServerGameState = {
 	selectedTargets: Record<string, number | null>;
 	lastAttackEvents: AttackEvent[];
 };
+
 export type Entity = Player | Enemy;
+
 export type EntityRef = {
 	kind: "player" | "enemy";
 	id: number;
 };
+
 export type Player = PlayerPublic & PlayerPrivate;
+
 export type EnemyPrivate = {
 	experience: number;
 	gold: number;
@@ -42,7 +46,9 @@ export type EnemyPrivate = {
 	nextRoamTimeMs: number;
 	lastAttackTime: number;
 };
+
 export type Enemy = EnemyPublic & EnemyPrivate;
+
 export const serverGameState: ServerGameState = {
 	players: {},
 	enemies: [],

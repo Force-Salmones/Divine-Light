@@ -1,12 +1,10 @@
 import { serverGameState } from "../state/gameState";
 import { loadPlayer } from "../services/loadPlayer";
 import { makeGameStateSnapshot } from "../snapshots/makeSnapshot";
-import { performAttack } from "../services/combat/performAttack";
 import { recalcPlayerDerivedStats } from "../services/progression/recalcPlayerStats";
 import { getJwtFromReq, validateJWT } from "@/auth/jwt";
 import { config } from "@/config";
 import { getUserById } from "@/db/queries/users";
-import { calculateApproachCoords } from "@/game/logic/movement/calculateApproachCoords";
 import { calculateTargetDistance } from "@/game/logic/movement/calculateTargetDistance";
 import type { Request } from "express";
 import { WebSocketServer } from "ws";
@@ -23,6 +21,8 @@ import { persistAllPlayers, persistPlayer } from "../services/persistPlayer";
 import { shutdown } from "../services/shutdown";
 import { sendWsToPlayer } from "../ws/sendWsToPlayer";
 import { initializeEnemies } from "./initializeEnemies";
+import { dispatchWsMessage } from "../ws/handlers";
+import type { WsHandlerContext } from "../ws/handlers/types";
 
 export let wss: WebSocketServer | null = null;
 export let httpServer: any = null;
@@ -124,267 +124,14 @@ export async function startServer() {
 			ws.on("message", (raw: any) => {
 				try {
 					const msg = JSON.parse(raw.toString());
-					console.log("WS message received:", msg);
 					const resolvedPlayerId = (ws as any).playerId;
 					if (!resolvedPlayerId) return;
 					const currentPlayerId: string = resolvedPlayerId;
-					switch (msg.type) {
-						case "chat": {
-							const { text } = msg as { text?: string };
-							if (typeof text !== "string" || !text.trim()) {
-								break;
-							}
-							const trimmed = text.trim();
-							const isAdminCommand = trimmed.startsWith("$");
-
-							if (isAdminCommand) {
-								const withoutPrefix = trimmed.slice(1).trim();
-								const parts = withoutPrefix
-									.split(/\s+/)
-									.filter(Boolean);
-								const commandName = parts[0];
-								const args = parts.slice(1);
-								if (!commandName) {
-									sendChatToPlayer(
-										currentPlayerId,
-										"No command specified after $",
-										true,
-									);
-									break;
-								}
-								if (commandName === "shutdown") {
-									broadcastChatMessage(
-										"Server is shutting down...",
-										undefined,
-										true,
-									);
-									void shutdown(
-										`Requested by ${currentPlayerId}`,
-									);
-									break;
-								}
-								const handler =
-									adminChatCommands[
-										commandName as keyof typeof adminChatCommands
-									] ??
-									adminChatCommands[commandName as string];
-								if (!handler) {
-									sendChatToPlayer(
-										currentPlayerId,
-										`Unknown command: ${commandName}`,
-										true,
-									);
-									break;
-								}
-
-								const ctx: ChatCommandContext = {
-									playerId: currentPlayerId,
-									args,
-									reply: (message: string) => {
-										sendChatToPlayer(
-											currentPlayerId,
-											message,
-											true,
-										);
-									},
-									broadcast: (message: string) => {
-										broadcastChatMessage(
-											message,
-											undefined,
-											true,
-										);
-									},
-								};
-
-								Promise.resolve(handler(ctx)).catch((err) => {
-									console.error(
-										"Chat command failed",
-										{
-											playerId: currentPlayerId,
-											commandName,
-										},
-										err,
-									);
-									const msg =
-										err instanceof Error
-											? err.message
-											: String(err);
-									sendChatToPlayer(
-										currentPlayerId,
-										`Command failed: ${msg}`,
-										true,
-									);
-								});
-							} else {
-								// Normal player chat: broadcast to everyone, using player name if available
-								const p =
-									serverGameState.players[currentPlayerId];
-								const fromName = p?.name ?? currentPlayerId;
-								broadcastChatMessage(trimmed, fromName, false);
-							}
-
-							break;
-						}
-						case "move": {
-							const { x, y, enemyId } = msg;
-							console.log("WS move", {
-								currentPlayerId,
-								x,
-								y,
-								enemyId,
-							});
-							const player =
-								serverGameState.players[currentPlayerId];
-							if (!player) break;
-							if (typeof enemyId === "number") {
-								// Move toward enemy slightly inside attack range
-								const enemy = serverGameState.enemies.find(
-									(e) => e.id === enemyId,
-								);
-								if (!enemy) break;
-								const approachCoords = calculateApproachCoords(
-									player,
-									enemy,
-								);
-								if (approachCoords) {
-									[player.targetX, player.targetY] =
-										approachCoords;
-								}
-							} else if (
-								typeof x === "number" &&
-								typeof y === "number"
-							) {
-								player.targetX = x;
-								player.targetY = y;
-							}
-							break;
-						}
-						case "attack": {
-							const { enemyId } = msg;
-							console.log("WS attack", {
-								currentPlayerId,
-								enemyId,
-								enemyIdType: typeof enemyId,
-							});
-							if (typeof enemyId !== "number") break;
-							serverGameState.selectedTargets[currentPlayerId] =
-								enemyId;
-
-							// If out of range, also set a movement target toward the enemy
-							const player =
-								serverGameState.players[currentPlayerId];
-							const enemy = serverGameState.enemies.find(
-								(e) => e.id === enemyId,
-							);
-							console.log("WS attack handler", {
-								currentPlayerId,
-								enemyId,
-								hasPlayer: !!player,
-								hasEnemy: !!enemy,
-							});
-							if (player && enemy) {
-								const approachCoords = calculateApproachCoords(
-									player,
-									enemy,
-								);
-								if (approachCoords) {
-									[player.targetX, player.targetY] =
-										approachCoords;
-								}
-							}
-							// Try an immediate attack; subsequent hits handled by server loop
-							performAttack(currentPlayerId, enemyId);
-							break;
-						}
-						case "stopAttack": {
-							serverGameState.selectedTargets[currentPlayerId] =
-								null;
-							break;
-						}
-						case "bonkPlayer": {
-							const { targetPlayerId } = msg as {
-								targetPlayerId?: string;
-							};
-							if (
-								typeof targetPlayerId !== "string" ||
-								!targetPlayerId
-							)
-								break;
-							if (targetPlayerId === currentPlayerId) break;
-
-							const bonker =
-								serverGameState.players[currentPlayerId];
-							const target =
-								serverGameState.players[targetPlayerId];
-							if (!bonker || !target) break;
-
-							const distance = calculateTargetDistance(
-								bonker,
-								target,
-							);
-
-							if (distance > bonker.attackRange) {
-								break;
-							}
-
-							const evt = {
-								type: "bonk",
-								fromId: currentPlayerId,
-								toId: targetPlayerId,
-								x: target.x,
-								y: target.y,
-								timestamp: Date.now(),
-							};
-
-							// Both players should see the bonk
-							sendWsToPlayer(currentPlayerId, evt);
-							sendWsToPlayer(targetPlayerId, evt);
-
-							break;
-						}
-						case "spendStat": {
-							const { stat } = msg as { stat?: string };
-							const player =
-								serverGameState.players[currentPlayerId];
-							if (!player) break;
-							if (typeof stat !== "string") break;
-							const upper = stat.toUpperCase();
-							const allowed = [
-								"STR",
-								"VIT",
-								"DEX",
-								"LUK",
-								"INT",
-								"WIS",
-							];
-							if (!allowed.includes(upper)) {
-								sendChatToPlayer(
-									currentPlayerId,
-									`Unknown stat: ${stat}`,
-									true,
-								);
-								break;
-							}
-							if (player.unallocatedPoints <= 0) {
-								sendChatToPlayer(
-									currentPlayerId,
-									"No unallocated stat points available.",
-									true,
-								);
-								break;
-							}
-							(player as any)[upper] =
-								((player as any)[upper] ?? 0) + 1;
-							player.unallocatedPoints -= 1;
-
-							// Recalculate derived stats (HP, MP, defense, resistance)
-							recalcPlayerDerivedStats(player);
-
-							break;
-						}
-						default:
-							break;
-					}
+					const ctx: WsHandlerContext = {
+						ws: ws,
+						playerId: currentPlayerId,
+					};
+					dispatchWsMessage(ctx, msg);
 				} catch (err) {
 					console.error("WS message error:", err);
 				}
