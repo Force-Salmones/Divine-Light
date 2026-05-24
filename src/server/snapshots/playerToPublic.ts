@@ -1,5 +1,5 @@
-import type { PlayerPublic } from "../shared/protocol/gamestate.js";
-import type { Player } from "./gamestate.js";
+import type { PlayerPublic } from "@/shared/protocol/gamestate";
+import type { Player } from "../state/gameState";
 
 export function playerToPublic(player: Player): PlayerPublic {
 	return {

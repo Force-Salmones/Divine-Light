@@ -1,14 +1,14 @@
 import express, { type Express } from "express";
 import type { Request, Response } from "express";
 import { config } from "../../config";
-import { serverGameState } from "../../api/gamestate";
-import { makeGameStateSnapshot } from "../../api/makeSnapshot";
+import { serverGameState } from "../state/gameState";
+import { makeGameStateSnapshot } from "../snapshots/makeSnapshot";
 
-import { loadPlayer } from "../../api/loadPlayer";
+import { loadPlayer } from "../services/loadPlayer";
 import { middlewareLogResponses } from "../middleware";
-import { handlerCreateUser } from "../../api/handlerCreateUser";
-import { handlerLogin } from "../../api/handlerLogin";
-import { handlerLogout } from "../../api/handlerLogout";
+import { handlerCreateUser } from "./handlers/handlerCreateUser";
+import { handlerLogin } from "./handlers/handlerLogin";
+import { handlerLogout } from "./handlers/handlerLogout";
 import {
 	requireJwtForApi,
 	requireJwtForApp,

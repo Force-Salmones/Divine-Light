@@ -1,8 +1,8 @@
 import { readFile } from "fs/promises";
-import { serverGameState } from "../api/gamestate";
+import { serverGameState } from "./state/gameState";
 import { pendingRespawns } from "./respawn";
 import { createMob, getAllMobs, removeMob } from "../db/queries/mobs";
-import { loadEnemy } from "../api/loadEnemy";
+import { loadEnemy } from "./services/loadEnemy";
 
 export type ChatCommandContext = {
 	playerId: string;

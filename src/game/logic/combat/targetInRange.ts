@@ -1,4 +1,5 @@
-import type { Enemy, Player } from "@/api/gamestate";
+import type { Enemy } from "@/server/state/gameState";
+import type { Player } from "@/server/state/gameState";
 
 export function targetInRange(
 	attacker: Player | Enemy,

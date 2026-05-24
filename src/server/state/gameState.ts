@@ -1,11 +1,12 @@
 import type {
+	AttackEvent,
 	EnemyPublic,
 	PlayerPrivate,
 	PlayerPublic,
-} from "../shared/protocol/gamestate.js";
-import type { AttackEvent } from "../shared/protocol/gamestate.js";
+} from "../../shared/protocol/gamestate";
 
 // Authoritative server-side state
+
 export type ServerGameState = {
 	players: Record<string, Player>;
 	enemies: Enemy[];
@@ -13,18 +14,12 @@ export type ServerGameState = {
 	selectedTargets: Record<string, number | null>;
 	lastAttackEvents: AttackEvent[];
 };
-
 export type Entity = Player | Enemy;
-
 export type EntityRef = {
 	kind: "player" | "enemy";
 	id: number;
 };
-
 export type Player = PlayerPublic & PlayerPrivate;
-
-export type Enemy = EnemyPublic & EnemyPrivate;
-
 export type EnemyPrivate = {
 	experience: number;
 	gold: number;
@@ -47,7 +42,7 @@ export type EnemyPrivate = {
 	nextRoamTimeMs: number;
 	lastAttackTime: number;
 };
-
+export type Enemy = EnemyPublic & EnemyPrivate;
 export const serverGameState: ServerGameState = {
 	players: {},
 	enemies: [],

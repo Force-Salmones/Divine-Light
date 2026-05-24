@@ -1,5 +1,5 @@
-import { serverGameState } from "@/api/gamestate";
-import { performAttack } from "@/api/performAttack";
+import { serverGameState } from "../state/gameState";
+import { performAttack } from "../services/combat/performAttack";
 
 export function updateAutomaticAttack() {
 	// Perform automatic attacks per selectedTargets

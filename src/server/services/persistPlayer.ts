@@ -1,4 +1,4 @@
-import { serverGameState } from "@/api/gamestate";
+import { serverGameState } from "../state/gameState";
 import { updateUser } from "@/db/queries/users";
 
 export async function persistPlayer(playerId: string) {

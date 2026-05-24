@@ -1,4 +1,5 @@
-import { type Player, serverGameState } from "@/api/gamestate";
+import { serverGameState } from "../state/gameState";
+import { type Player } from "../state/gameState";
 import { sendChatToPlayer } from "../chatService";
 
 export function respawnPlayer(player: Player) {

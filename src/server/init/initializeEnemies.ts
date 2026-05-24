@@ -1,5 +1,5 @@
-import { serverGameState } from "@/api/gamestate";
-import { loadEnemy } from "@/api/loadEnemy";
+import { serverGameState } from "../state/gameState";
+import { loadEnemy } from "../services/loadEnemy";
 import { getAllMobs } from "@/db/queries/mobs";
 
 export async function initializeEnemies() {

@@ -1,9 +1,13 @@
-import { serverGameState, type Enemy, type Player } from "./gamestate";
-import { scheduleMobRespawn } from "../server/respawn";
-import { defeatEnemy } from "./defeatEnemy";
+import { targetInRange } from "@/game/logic/combat/targetInRange";
+import { scheduleMobRespawn } from "@/server/respawn";
+import {
+	serverGameState,
+	type Enemy,
+	type Player,
+} from "@/server/state/gameState";
+import type { AttackEvent } from "@/shared/protocol/gamestate";
 import { rollPhysicalDamage } from "./calcDamage";
-import type { AttackEvent } from "@/shared/protocol/gamestate.js";
-import { targetInRange } from "@/game/logic/combat/targetInRange.js";
+import { defeatEnemy } from "./defeatEnemy";
 
 export function performAttack(
 	playerId: string,

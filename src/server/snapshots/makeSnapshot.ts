@@ -1,14 +1,15 @@
-import { serverGameState } from "./gamestate";
 import type {
 	GameStateSnapshot,
 	PlayerPublic,
-} from "../shared/protocol/gamestate.js";
+} from "@/shared/protocol/gamestate";
+import { serverGameState } from "../state/gameState";
 import { playerToPublic } from "./playerToPublic";
 
 /**
  * Builds a per-player snapshot from the authoritative server state.
  * Sent to the browser over WS.
  */
+
 export function makeGameStateSnapshot(playerId: string): GameStateSnapshot {
 	const player = serverGameState.players[playerId];
 	if (!player) {

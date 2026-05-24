@@ -1,5 +1,6 @@
-import { rollEnemyDamage } from "@/api/calcDamage";
-import { serverGameState, type Enemy } from "@/api/gamestate";
+import { rollEnemyDamage } from "../services/combat/calcDamage";
+import { serverGameState } from "../state/gameState";
+import { type Enemy } from "../state/gameState";
 import { PLAYER_SIZE, APPROACH_MARGIN } from "@/app/constants";
 import { updateRespawns } from "../respawn";
 import { respawnPlayer } from "./respawnPlayer";

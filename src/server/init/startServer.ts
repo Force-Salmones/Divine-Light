@@ -1,8 +1,8 @@
-import { serverGameState } from "@/api/gamestate";
-import { loadPlayer } from "@/api/loadPlayer";
-import { makeGameStateSnapshot } from "@/api/makeSnapshot";
-import { performAttack } from "@/api/performAttack";
-import { recalcPlayerDerivedStats } from "@/api/recalcPlayerStats";
+import { serverGameState } from "../state/gameState";
+import { loadPlayer } from "../services/loadPlayer";
+import { makeGameStateSnapshot } from "../snapshots/makeSnapshot";
+import { performAttack } from "../services/combat/performAttack";
+import { recalcPlayerDerivedStats } from "../services/progression/recalcPlayerStats";
 import { getJwtFromReq, validateJWT } from "@/auth/jwt";
 import { config } from "@/config";
 import { getUserById } from "@/db/queries/users";

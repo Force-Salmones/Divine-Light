@@ -1,6 +1,7 @@
-import { serverGameState, type Enemy } from "../api/gamestate";
+import { serverGameState } from "./state/gameState";
+import { type Enemy } from "./state/gameState";
 import { getMobById } from "../db/queries/mobs";
-import { loadEnemy } from "../api/loadEnemy";
+import { loadEnemy } from "./services/loadEnemy";
 import type { Mob } from "../db/schema";
 
 // Track pending respawns by unique mob instance id (DB primary key)
