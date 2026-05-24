@@ -145,6 +145,8 @@ export function renderFrame(app: AppContext) {
 	renderFloatingTexts(ctx, app.floatingText);
 
 	// --- UI space ---
+
+	// Selected Entity Panel
 	setUiTransform(ctx, viewport);
 	const sel = app.store.selectedEntity;
 	if (sel?.type === "enemy") {
@@ -174,4 +176,18 @@ export function renderFrame(app: AppContext) {
 	}
 
 	drawPlayerInfoPanel(ctx, viewport, snapshot.player);
+
+	// FPS counter
+	if (app.store.showFpsCounter) {
+		ctx.save();
+		ctx.font = "12px comic-sans-ms";
+		ctx.textAlign = "right";
+
+		const text = `FPS: ${Math.round(app.store.fps)}`;
+		const x = viewport.canvasCssWidth - 10;
+		const y = 20;
+
+		ctx.fillText(text, x, y);
+		ctx.restore();
+	}
 }

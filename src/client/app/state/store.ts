@@ -39,6 +39,10 @@ export type ClientStore = {
 
 	/** Key cache to avoid duplicate spawns for other-player events (pruned). */
 	processedOtherAttackEventKeys: Map<string, number>;
+
+	showFpsCounter: boolean;
+
+	fps: number;
 };
 
 /**
@@ -56,5 +60,7 @@ export function createClientStore(): ClientStore {
 		lastProcessedIncomingHitTimestamp: 0,
 		lastProcessedOtherAttackEventTimestamp: 0,
 		processedOtherAttackEventKeys: new Map<string, number>(),
+		showFpsCounter: false,
+		fps: 0,
 	};
 }

@@ -16,6 +16,13 @@ export function startGameLoop(app: AppContext) {
 		const deltaMs = timestamp - lastTime;
 		lastTime = timestamp;
 
+		if (deltaMs > 0) {
+			const instantFps = 1000 / deltaMs;
+			app.store.fps = app.store.fps
+				? app.store.fps * 0.9 + instantFps * 0.1
+				: instantFps;
+		}
+
 		updateFloatingTexts(app.floatingText, deltaMs);
 		renderFrame(app);
 

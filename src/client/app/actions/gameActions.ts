@@ -55,3 +55,10 @@ export function spendStat(app: AppContext, stat: StatKey) {
 export function bonkPlayer(app: AppContext, targetPlayerId: string) {
 	app.ws.send({ type: "bonkPlayer", targetPlayerId });
 }
+
+/**
+ * Loot nearest item in range (if any)
+ */
+export function pickupItem(app: AppContext) {
+	app.ws.send({ type: "pickupItem" });
+}

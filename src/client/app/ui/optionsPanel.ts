@@ -73,20 +73,22 @@ export function createOptionsPanelUI(
 		header.style.marginBottom = "6px";
 		container.appendChild(header);
 
-		const row = document.createElement("div");
-		row.style.display = "flex";
-		row.style.alignItems = "center";
-		row.style.justifyContent = "space-between";
-		row.style.gap = "8px";
+		// Show other Players' Damage
+		const otherPlayersDmgRow = document.createElement("div");
+		otherPlayersDmgRow.style.display = "flex";
+		otherPlayersDmgRow.style.alignItems = "center";
+		otherPlayersDmgRow.style.justifyContent = "space-between";
+		otherPlayersDmgRow.style.gap = "8px";
 
-		const label = document.createElement("span");
-		label.textContent = "Show other players' damage";
+		const otherPlayersDmgLabel = document.createElement("span");
+		otherPlayersDmgLabel.textContent = "Show other players' damage";
 
-		const checkbox = document.createElement("input");
-		checkbox.type = "checkbox";
-		checkbox.checked = options.store.showOtherPlayersDamage;
-		checkbox.addEventListener("change", () => {
-			options.store.showOtherPlayersDamage = checkbox.checked;
+		const otherPlayersDmgCheckbox = document.createElement("input");
+		otherPlayersDmgCheckbox.type = "checkbox";
+		otherPlayersDmgCheckbox.checked = options.store.showOtherPlayersDamage;
+		otherPlayersDmgCheckbox.addEventListener("change", () => {
+			options.store.showOtherPlayersDamage =
+				otherPlayersDmgCheckbox.checked;
 			localStorage.setItem(
 				"showOtherPlayersDamage",
 				options.store.showOtherPlayersDamage ? "1" : "0",
@@ -106,9 +108,9 @@ export function createOptionsPanelUI(
 			}
 		});
 
-		row.appendChild(label);
-		row.appendChild(checkbox);
-		container.appendChild(row);
+		otherPlayersDmgRow.appendChild(otherPlayersDmgLabel);
+		otherPlayersDmgRow.appendChild(otherPlayersDmgCheckbox);
+		container.appendChild(otherPlayersDmgRow);
 
 		const hint = document.createElement("div");
 		hint.style.marginTop = "8px";
@@ -116,6 +118,31 @@ export function createOptionsPanelUI(
 		hint.textContent =
 			"Shows outgoing damage numbers for other players (light grey).";
 		container.appendChild(hint);
+
+		// Show FPS
+		const showFPSRow = document.createElement("div");
+		showFPSRow.style.display = "flex";
+		showFPSRow.style.alignItems = "center";
+		showFPSRow.style.justifyContent = "space-between";
+		showFPSRow.style.gap = "8px";
+
+		const showFPSLabel = document.createElement("span");
+		showFPSLabel.textContent = "Show FPS Counter";
+
+		const showFPSCheckbox = document.createElement("input");
+		showFPSCheckbox.type = "checkbox";
+		showFPSCheckbox.checked = options.store.showFpsCounter;
+		showFPSCheckbox.addEventListener("change", () => {
+			options.store.showFpsCounter = showFPSCheckbox.checked;
+			localStorage.setItem(
+				"showFpsCounter",
+				options.store.showFpsCounter ? "1" : "0",
+			);
+		});
+
+		showFPSRow.appendChild(showFPSLabel);
+		showFPSRow.appendChild(showFPSCheckbox);
+		container.appendChild(showFPSRow);
 	}
 
 	return { button, container, update };
