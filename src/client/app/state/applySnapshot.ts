@@ -13,6 +13,7 @@ import { attackEnemy, stopAttack } from "../actions/gameActions.js";
 import { isWithinAttackRange } from "../game/range.js";
 import { isOptionsPanelVisible } from "../ui/optionsPanel.js";
 import { isStatsPanelVisible } from "../ui/statsPanel.js";
+import { isInventoryPanelVisible } from "../ui/inventoryPanel.js";
 
 /**
  * Apply a new snapshot from the server.
@@ -168,5 +169,8 @@ export async function applySnapshot(
 	}
 	if (isOptionsPanelVisible(app.ui.options)) {
 		app.ui.options.update(snapshot);
+	}
+	if (isInventoryPanelVisible(app.ui.inventory)) {
+		app.ui.inventory.update(snapshot);
 	}
 }

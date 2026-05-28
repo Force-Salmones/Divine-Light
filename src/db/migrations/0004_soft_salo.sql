@@ -1,6 +1,4 @@
-ALTER TABLE "users" ALTER COLUMN "base_str" SET DEFAULT 4;--> statement-breakpoint
-ALTER TABLE "users" ALTER COLUMN "base_vit" SET DEFAULT 4;--> statement-breakpoint
-ALTER TABLE "users" ALTER COLUMN "base_dex" SET DEFAULT 4;--> statement-breakpoint
-ALTER TABLE "users" ALTER COLUMN "base_luk" SET DEFAULT 4;--> statement-breakpoint
-ALTER TABLE "users" ALTER COLUMN "base_int" SET DEFAULT 4;--> statement-breakpoint
-ALTER TABLE "users" ALTER COLUMN "base_wis" SET DEFAULT 4;
+ALTER TABLE "mobs" DROP CONSTRAINT "mobs_mob_id_unique";--> statement-breakpoint
+ALTER TABLE "mobs" ALTER COLUMN "id" SET DATA TYPE serial;--> statement-breakpoint
+
+ALTER TABLE "mobs" ALTER COLUMN "id" DROP DEFAULT;--> statement-breakpoint

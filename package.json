@@ -4,7 +4,7 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"dev": "bun src/server/index.ts | tee server.log",
+		"dev": "bun src/server/index.ts | tee logs/server.log",
 		"compile": "tsc --skipLibCheck --ignoreConfig --types bun --noEmit false --outDir public --rootDir src src/app/*.ts src/client/**/*.ts src/shared/**/*.ts src/home/*.ts src/home/auth/*.ts src/home/signup/*.ts src/game/logic/movement/*.ts",
 		"lint": "eslint ."
 	},
@@ -17,7 +17,8 @@
 		"express": "^5.2.1",
 		"jsonwebtoken": "^9.0.3",
 		"postgres": "^3.4.9",
-		"ws": "^8.20.0"
+		"ws": "^8.20.0",
+		"zod": "^4.4.3"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",

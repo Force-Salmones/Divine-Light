@@ -1,0 +1,10 @@
+{
+	"0": {
+		"id": 0,
+		"name": "test",
+		"type": "etc",
+		"stackSize": 1,
+		"flavor": "Divine Light's first item",
+		"typeProps": {}
+	}
+}

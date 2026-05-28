@@ -1,28 +1,20 @@
 import { serverGameState } from "../state/gameState";
 import { loadPlayer } from "../services/loadPlayer";
 import { makeGameStateSnapshot } from "../snapshots/makeSnapshot";
-import { recalcPlayerDerivedStats } from "../services/progression/recalcPlayerStats";
 import { getJwtFromReq, validateJWT } from "@/auth/jwt";
 import { config } from "@/config";
 import { getUserById } from "@/db/queries/users";
-import { calculateTargetDistance } from "@/game/logic/movement/calculateTargetDistance";
 import type { Request } from "express";
 import { WebSocketServer } from "ws";
 import { app, wsByPlayerId } from "..";
 import { registerHttpRoutes } from "../http/routes";
-import { adminChatCommands, type ChatCommandContext } from "../chatCommands";
-import {
-	initChatService,
-	sendChatToPlayer,
-	broadcastChatMessage,
-} from "../chatService";
+import { initChatService } from "../chatService";
 import { startTickLoop } from "../loop/startTickLoop";
 import { persistAllPlayers, persistPlayer } from "../services/persistPlayer";
-import { shutdown } from "../services/shutdown";
-import { sendWsToPlayer } from "../ws/sendWsToPlayer";
 import { initializeEnemies } from "./initializeEnemies";
 import { dispatchWsMessage } from "../ws/handlers";
 import type { WsHandlerContext } from "../ws/handlers/types";
+import { loadItemRegistry } from "../services/items/itemRegistry";
 
 export let wss: WebSocketServer | null = null;
 export let httpServer: any = null;
@@ -32,6 +24,7 @@ export async function startServer() {
 	registerHttpRoutes(app);
 
 	await initializeEnemies();
+	await loadItemRegistry();
 	startTickLoop();
 
 	// Periodic persistence of all online players (every 60 seconds)

@@ -27,4 +27,4 @@ CREATE TABLE "users" (
 	"pos_y" integer DEFAULT 600 NOT NULL,
 	CONSTRAINT "users_name_unique" UNIQUE("name"),
 	CONSTRAINT "users_email_unique" UNIQUE("email")
-);
+);--> statement-breakpoint

@@ -13,6 +13,7 @@ import type { WsClient } from "./net/wsClient.js";
 import type { ChatUI } from "./ui/chat.js";
 import type { StatsPanelUI } from "./ui/statsPanel.js";
 import type { OptionsPanelUI } from "./ui/optionsPanel.js";
+import type { InventoryPanelUI } from "./ui/inventoryPanel.js";
 
 export type AppContext = {
 	/** The game canvas element. */
@@ -44,5 +45,6 @@ export type AppContext = {
 		chat: ChatUI;
 		stats: StatsPanelUI;
 		options: OptionsPanelUI;
+		inventory: InventoryPanelUI;
 	};
 };

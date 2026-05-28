@@ -2,6 +2,7 @@ import { getUserById } from "@/db/queries/users";
 import type { User } from "@/db/schema";
 import type { Player } from "../state/gameState";
 import { expToLevelUp } from "./progression/gainExperience";
+import { validateInventory } from "./items/validateInventory";
 
 export async function loadPlayer(
 	playerId: string,
@@ -37,7 +38,7 @@ export async function loadPlayer(
 		attackRange: 50,
 		attackSpeed: 1,
 		lastAttackTime: 0,
-		inventory: dbUser.inventory ?? { equipment: {}, items: {} },
+		inventory: await validateInventory(dbUser.inventory, dbUser.id),
 		size: 32,
 	};
 	return player;

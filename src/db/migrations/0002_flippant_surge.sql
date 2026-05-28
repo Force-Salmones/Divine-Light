@@ -1,1 +1,1 @@
-ALTER TABLE "users" ADD COLUMN "unallocated_points" integer DEFAULT 0 NOT NULL;
+ALTER TABLE "users" ADD COLUMN "unallocated_points" integer DEFAULT 0 NOT NULL;--> statement-breakpoint

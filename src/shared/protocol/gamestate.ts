@@ -1,3 +1,5 @@
+import type { Inventory } from "../items/inventory";
+
 export type StatKey = "STR" | "VIT" | "DEX" | "LUK" | "INT" | "WIS";
 export const statKeys = ["STR", "VIT", "DEX", "LUK", "INT", "WIS"];
 
@@ -56,7 +58,7 @@ export type PlayerPrivate = {
 	lastAttackTime: number;
 	targetX?: number;
 	targetY?: number;
-	inventory: unknown;
+	inventory: Inventory;
 	lastAttackEvent?: AttackEvent;
 	lastIncomingHit?: IncomingHit;
 	lastLevelUp?: LevelUpEvent;

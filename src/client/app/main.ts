@@ -16,6 +16,7 @@ import { startGameLoop } from "./engine/loop.js";
 import { registerCanvasClickHandler } from "./input/clickHandler.js";
 import { sendChat, spendStat } from "./actions/gameActions.js";
 import { createLoadingScreenUI } from "./ui/loadingScreen.js";
+import { createInventoryPanelUI } from "./ui/inventoryPanel.js";
 
 export function startApp() {
 	const canvas = document.getElementById("game") as HTMLCanvasElement | null;
@@ -53,6 +54,8 @@ export function startApp() {
 	});
 
 	const options = createOptionsPanelUI({ store });
+
+	const inventory = createInventoryPanelUI();
 
 	const ws = createWsClient({
 		onOpen: () => {
@@ -102,7 +105,7 @@ export function startApp() {
 		sprites,
 		floatingText,
 		ws,
-		ui: { chat, stats, options },
+		ui: { chat, stats, options, inventory },
 	};
 
 	function relayout() {
@@ -112,6 +115,8 @@ export function startApp() {
 			statsContainer: stats.container,
 			optionsButton: options.button,
 			optionsContainer: options.container,
+			inventoryButton: inventory.button,
+			inventoryContainer: inventory.container,
 		});
 	}
 

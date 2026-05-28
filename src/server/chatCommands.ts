@@ -1,8 +1,10 @@
 import { readFile } from "fs/promises";
-import { serverGameState } from "./state/gameState";
+import { serverGameState, type Player } from "./state/gameState";
 import { pendingRespawns } from "./respawn";
-import { createMob, getAllMobs, removeMob } from "../db/queries/mobs";
+import { createMob, removeMob } from "../db/queries/mobs";
 import { loadEnemy } from "./services/loadEnemy";
+import { addToInventory } from "./services/items/addToInventory";
+import { getItemDef } from "./services/items/itemRegistry";
 
 export type ChatCommandContext = {
 	playerId: string;
@@ -50,7 +52,7 @@ export const adminChatCommands: Record<string, ChatCommandHandler> = {
 			!Number.isFinite(homeX) ||
 			!Number.isFinite(homeY)
 		) {
-			await reply(
+			void reply(
 				"Usage: $addmob <mobTypeId> <homeX> <homeY> (all must be numbers)",
 			);
 			return;
@@ -81,7 +83,7 @@ export const adminChatCommands: Record<string, ChatCommandHandler> = {
 			serverGameState.enemies.push(enemy);
 		}
 
-		await reply(
+		void reply(
 			`Added mob instance #${row.id} (type ${mobTypeId}) at (${homeX}, ${homeY})`,
 		);
 	},
@@ -96,7 +98,7 @@ export const adminChatCommands: Record<string, ChatCommandHandler> = {
 
 		const instanceId = Number(args[0]);
 		if (!Number.isFinite(instanceId)) {
-			await reply("Usage: $delmob <instanceId> (must be a number)");
+			void reply("Usage: $delmob <instanceId> (must be a number)");
 			return;
 		}
 
@@ -112,5 +114,43 @@ export const adminChatCommands: Record<string, ChatCommandHandler> = {
 		if (idx >= 0) pendingRespawns.splice(idx, 1);
 
 		await reply(`Deleted mob instance #${instanceId}`);
+	},
+	give: async ({ args, reply }) => {
+		if (args.length < 3) {
+			void reply("Usage: $give <name> <quantity> <itemId>");
+			return;
+		}
+		const playerName = args[0];
+		let foundPlayer: Player | null = null;
+		for (const player in serverGameState.players) {
+			if (!serverGameState.players[player]) continue;
+			if (serverGameState.players[player].name === playerName) {
+				foundPlayer = serverGameState.players[player];
+			}
+		}
+		if (!foundPlayer) {
+			void reply(`Player "${playerName}" not found."`);
+			return;
+		}
+
+		const quantity = Number(args[1]);
+		if (!Number.isInteger(quantity) || quantity <= 0) {
+			await reply(
+				`Invalid quantity: "${args[1]}" (must be an integer > 0)`,
+			);
+			return;
+		}
+
+		const itemId = Number(args[2]);
+		if (!Number.isInteger(itemId) || itemId < 0) {
+			await reply(
+				`Invalid itemId: "${args[2]}" (must be an integer >= 0)`,
+			);
+			return;
+		}
+
+		const stackSize = getItemDef(itemId).stackSize;
+
+		addToInventory(foundPlayer.inventory, itemId, quantity, stackSize);
 	},
 };

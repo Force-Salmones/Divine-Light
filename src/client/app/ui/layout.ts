@@ -11,6 +11,8 @@ export type OverlayHandles = {
 	statsContainer?: HTMLDivElement;
 	optionsButton?: HTMLButtonElement;
 	optionsContainer?: HTMLDivElement;
+	inventoryButton?: HTMLButtonElement;
+	inventoryContainer?: HTMLDivElement;
 };
 
 /**
@@ -54,13 +56,23 @@ export function layoutOverlayElements(
 		handles.optionsButton.style.bottom = `${buttonBottom}px`;
 	}
 
+	if (handles.inventoryButton) {
+		handles.inventoryButton.style.right = `${outsideRight + 220}px`;
+		handles.inventoryButton.style.bottom = `${buttonBottom}px`;
+	}
+
 	if (handles.statsContainer) {
 		handles.statsContainer.style.right = `${outsideRight + 20}px`;
 		handles.statsContainer.style.bottom = `${panelBottom}px`;
 	}
 
 	if (handles.optionsContainer) {
-		handles.optionsContainer.style.right = `${outsideRight + 20 + 270}px`;
+		handles.optionsContainer.style.right = `${outsideRight + 290}px`;
 		handles.optionsContainer.style.bottom = `${panelBottom}px`;
+	}
+
+	if (handles.inventoryContainer) {
+		handles.inventoryContainer.style.right = `${outsideRight + 290 + 270}px`;
+		handles.inventoryContainer.style.bottom = `${panelBottom}px`;
 	}
 }

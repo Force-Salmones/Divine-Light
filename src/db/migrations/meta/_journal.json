@@ -36,6 +36,13 @@
       "when": 1777259920216,
       "tag": "0004_soft_salo",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1779728099652,
+      "tag": "0005_vengeful_newton_destine",
+      "breakpoints": true
     }
   ]
 }

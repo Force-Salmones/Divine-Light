@@ -1,1 +1,1 @@
-ALTER TABLE "users" ALTER COLUMN "password_hash" SET DATA TYPE varchar(255);
+ALTER TABLE "users" ALTER COLUMN "password_hash" SET DATA TYPE varchar(255);--> statement-breakpoint
