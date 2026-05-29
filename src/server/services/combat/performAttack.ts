@@ -100,7 +100,7 @@ export function performAttack(
 	if (enemyDead) {
 		try {
 			// Use the same player object reference from gameState so changes are visible in snapshots
-			void defeatEnemy(player, enemy);
+			defeatEnemy(player, enemy);
 		} catch (err) {
 			console.error("defeatEnemy failed", err);
 		}

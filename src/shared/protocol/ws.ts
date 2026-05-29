@@ -14,7 +14,7 @@ export type ClientToServerMessage =
 	| { type: "stopAttack" }
 	| { type: "bonkPlayer"; targetPlayerId: string }
 	| { type: "spendStat"; stat: StatKey }
-	| { type: "pickupItem" };
+	| { type: "pickupItem"; groundItemId?: string };
 
 export type ServerToClientMessage =
 	| { type: "gameState"; gameState: GameStateSnapshot }

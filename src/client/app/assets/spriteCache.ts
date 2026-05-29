@@ -45,14 +45,24 @@ export async function refreshSpritesIfNeeded(
 		spriteUrls.add(e.sprite);
 	}
 
+	for (const gi of snapshot.groundItems) {
+		spriteUrls.add(`/assets/items/${gi.itemId}.png`);
+	}
+
 	const missing = Array.from(spriteUrls).filter(
 		(url) => !cache.images.has(url),
 	);
 	if (!missing.length) return;
 
-	const loaded = await Promise.all(missing.map((url) => loadImage(url)));
-	missing.forEach((url, idx) => {
-		const img = loaded[idx];
-		if (img) cache.images.set(url, img);
+	const results = await Promise.allSettled(
+		missing.map((url) => loadImage(url)),
+	);
+	results.forEach((res, idx) => {
+		const url = missing[idx]!;
+		if (res.status === "fulfilled") {
+			cache.images.set(url, res.value);
+		} else {
+			console.warn("Failed to load sprite");
+		}
 	});
 }

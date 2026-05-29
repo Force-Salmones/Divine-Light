@@ -1,6 +1,8 @@
+import type { MobDropsDef } from "../../shared/mobs/mobTypes.js";
 import type {
 	AttackEvent,
 	EnemyPublic,
+	GroundItem,
 	PlayerPrivate,
 	PlayerPublic,
 } from "../../shared/protocol/gamestate";
@@ -10,6 +12,7 @@ import type {
 export type ServerGameState = {
 	players: Record<string, Player>;
 	enemies: Enemy[];
+	groundItems: Map<string, GroundItem>;
 	// Players with a selected target will auto attack if in combat
 	selectedTargets: Record<string, number | null>;
 	lastAttackEvents: AttackEvent[];
@@ -37,7 +40,7 @@ export type EnemyPrivate = {
 	respawnTime: number;
 	aggressive: boolean;
 	retreats: boolean;
-	drops: unknown;
+	drops: MobDropsDef;
 	homeX: number;
 	homeY: number;
 	targetPlayerId?: string | null;
@@ -52,6 +55,7 @@ export type Enemy = EnemyPublic & EnemyPrivate;
 export const serverGameState: ServerGameState = {
 	players: {},
 	enemies: [],
+	groundItems: new Map(),
 	selectedTargets: {},
 	lastAttackEvents: [],
 };

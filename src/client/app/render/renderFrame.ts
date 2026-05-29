@@ -141,6 +141,18 @@ export function renderFrame(app: AppContext) {
 		}
 	}
 
+	// Ground items
+	const ITEM_SIZE = 24;
+	for (const gi of snapshot.groundItems ?? []) {
+		const sprite = `/assets/items/${gi.itemId}.png`;
+		const img = app.sprites.images.get(sprite);
+		if (img) ctx.drawImage(img, gi.x, gi.y, ITEM_SIZE, ITEM_SIZE);
+		else {
+			ctx.fillStyle = "rgba(255,255,0,0,0.8";
+			ctx.fillRect(gi.x, gi.y, ITEM_SIZE, ITEM_SIZE);
+		}
+	}
+
 	// Floating texts
 	renderFloatingTexts(ctx, app.floatingText);
 

@@ -28,6 +28,7 @@ export function makeGameStateSnapshot(playerId: string): GameStateSnapshot {
 	return {
 		players: players,
 		enemies: serverGameState.enemies,
+		groundItems: Array.from(serverGameState.groundItems.values()),
 		selfId: playerId,
 		player: player,
 		selectedEnemyId: serverGameState.selectedTargets[playerId] ?? null,

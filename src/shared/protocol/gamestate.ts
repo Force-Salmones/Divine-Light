@@ -1,4 +1,5 @@
-import type { Inventory } from "../items/inventory";
+import type { Inventory } from "../items/inventory.js";
+import type { ItemId } from "../items/itemTypes.js";
 
 export type StatKey = "STR" | "VIT" | "DEX" | "LUK" | "INT" | "WIS";
 export const statKeys = ["STR", "VIT", "DEX", "LUK", "INT", "WIS"];
@@ -77,9 +78,18 @@ export type EnemyPublic = {
 	size: number;
 };
 
+export type GroundItem = {
+	id: string;
+	itemId: ItemId;
+	quantity: number;
+	x: number;
+	y: number;
+};
+
 export type GameStateSnapshot = {
 	players: Record<string, PlayerPublic>;
 	enemies: EnemyPublic[];
+	groundItems: GroundItem[];
 	selfId: string;
 	player: PlayerPublic & PlayerPrivate;
 	selectedEnemyId: number | null;

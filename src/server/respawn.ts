@@ -11,7 +11,7 @@ export const pendingRespawns: PendingRespawn[] = [];
 export function scheduleMobRespawn(enemy: Enemy) {
 	// Avoid scheduling duplicates for the same id
 	if (pendingRespawns.some((r) => r.id === enemy.id)) return;
-	const delayMs = Math.max(0, (enemy.reSpawnTime ?? 0) * 1000);
+	const delayMs = Math.max(0, (enemy.respawnTime ?? 0) * 1000);
 	const at = Date.now() + delayMs;
 	pendingRespawns.push({ id: enemy.id, at });
 }
