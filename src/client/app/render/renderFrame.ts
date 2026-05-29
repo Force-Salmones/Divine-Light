@@ -62,6 +62,35 @@ export function renderFrame(app: AppContext) {
 		);
 	}
 
+	// Enemies
+	for (const e of snapshot.enemies) {
+		const img = app.sprites.images.get(e.sprite);
+		if (img) {
+			ctx.drawImage(img, e.x, e.y, e.size, e.size);
+		} else {
+			ctx.fillStyle = "green";
+			ctx.fillRect(e.x, e.y, e.size, e.size);
+		}
+		if (
+			app.store.selectedEntity?.type === "enemy" &&
+			app.store.selectedEntity.id === e.id
+		) {
+			drawOutline(ctx, e.x, e.y, e.size, e.size);
+		}
+	}
+
+	// Ground items
+	const ITEM_SIZE = 16;
+	for (const gi of snapshot.groundItems ?? []) {
+		const sprite = `/assets/items/${gi.itemId}.png`;
+		const img = app.sprites.images.get(sprite);
+		if (img) ctx.drawImage(img, gi.x, gi.y, ITEM_SIZE, ITEM_SIZE);
+		else {
+			ctx.fillStyle = "rgba(255,255,0,0,0.8";
+			ctx.fillRect(gi.x, gi.y, ITEM_SIZE, ITEM_SIZE);
+		}
+	}
+
 	// Other players
 	for (const p of Object.values(snapshot.players ?? {})) {
 		if (p.id === snapshot.selfId) continue;
@@ -122,35 +151,6 @@ export function renderFrame(app: AppContext) {
 			snapshot.player.size,
 			snapshot.player.size,
 		);
-	}
-
-	// Enemies
-	for (const e of snapshot.enemies) {
-		const img = app.sprites.images.get(e.sprite);
-		if (img) {
-			ctx.drawImage(img, e.x, e.y, e.size, e.size);
-		} else {
-			ctx.fillStyle = "green";
-			ctx.fillRect(e.x, e.y, e.size, e.size);
-		}
-		if (
-			app.store.selectedEntity?.type === "enemy" &&
-			app.store.selectedEntity.id === e.id
-		) {
-			drawOutline(ctx, e.x, e.y, e.size, e.size);
-		}
-	}
-
-	// Ground items
-	const ITEM_SIZE = 24;
-	for (const gi of snapshot.groundItems ?? []) {
-		const sprite = `/assets/items/${gi.itemId}.png`;
-		const img = app.sprites.images.get(sprite);
-		if (img) ctx.drawImage(img, gi.x, gi.y, ITEM_SIZE, ITEM_SIZE);
-		else {
-			ctx.fillStyle = "rgba(255,255,0,0,0.8";
-			ctx.fillRect(gi.x, gi.y, ITEM_SIZE, ITEM_SIZE);
-		}
 	}
 
 	// Floating texts
