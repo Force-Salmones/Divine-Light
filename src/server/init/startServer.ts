@@ -15,6 +15,7 @@ import { initializeEnemies } from "./initializeEnemies";
 import { dispatchWsMessage } from "../ws/handlers";
 import type { WsHandlerContext } from "../ws/handlers/types";
 import { loadItemRegistry } from "../services/items/itemRegistry";
+import { loadMobRegistry } from "../services/mobs/mobsRegistry";
 
 export let wss: WebSocketServer | null = null;
 export let httpServer: any = null;
@@ -23,8 +24,9 @@ export async function startServer() {
 	// HTTP routes + static serving
 	registerHttpRoutes(app);
 
-	await initializeEnemies();
+	await loadMobRegistry();
 	await loadItemRegistry();
+	await initializeEnemies();
 	startTickLoop();
 
 	// Periodic persistence of all online players (every 60 seconds)

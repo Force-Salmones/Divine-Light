@@ -34,7 +34,7 @@ export type EnemyPrivate = {
 	defense: number;
 	resistance: number;
 	speed: number;
-	reSpawnTime: number;
+	respawnTime: number;
 	aggressive: boolean;
 	retreats: boolean;
 	drops: unknown;

@@ -1,5 +1,6 @@
 {
 	"0": {
+		"id": 0,
 		"name": "Slime",
 		"level": 1,
 		"experience": 15,
@@ -12,7 +13,7 @@
 		"defense": 0,
 		"resistance": 0,
 		"speed": 50,
-		"reSpawnTime": 10,
+		"respawnTime": 10,
 		"aggressive": false,
 		"retreats": false,
 		"drops": {
@@ -24,6 +25,7 @@
 		"size": 25
 	},
 	"1": {
+		"id": 1,
 		"name": "Ribbon Pig",
 		"level": 10,
 		"experience": 35,
@@ -36,13 +38,14 @@
 		"defense": 12,
 		"resistance": 0,
 		"speed": 75,
-		"reSpawnTime": 10,
+		"respawnTime": 10,
 		"aggressive": false,
 		"retreats": false,
 		"drops": {},
 		"size": 25
 	},
 	"2": {
+		"id": 2,
 		"name": "Stone Golem",
 		"level": 25,
 		"experience": 100,
@@ -55,7 +58,7 @@
 		"defense": 25,
 		"resistance": 10,
 		"speed": 25,
-		"reSpawnTime": 10,
+		"respawnTime": 10,
 		"aggressive": false,
 		"retreats": false,
 		"drops": {},
