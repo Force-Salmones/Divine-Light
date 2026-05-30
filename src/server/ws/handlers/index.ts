@@ -6,6 +6,7 @@ import { handleSpendStat } from "./spendStat";
 import type { WsHandlerContext } from "./types";
 import { handleChat } from "./chat";
 import { handlePickupItem } from "./pickupItem";
+import { handleDropItem } from "./dropItem";
 
 const handlers: Record<string, (ctx: WsHandlerContext, msg: any) => void> = {
 	move: handleMove,
@@ -15,6 +16,7 @@ const handlers: Record<string, (ctx: WsHandlerContext, msg: any) => void> = {
 	spendStat: handleSpendStat,
 	chat: handleChat,
 	pickupItem: handlePickupItem,
+	dropItem: handleDropItem,
 };
 
 export function dispatchWsMessage(ctx: WsHandlerContext, msg: any) {

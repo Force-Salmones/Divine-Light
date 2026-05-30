@@ -19,6 +19,8 @@ import {
 	isWithinAttackRange,
 	isWithinPlayerAttackRange,
 } from "../game/range.js";
+const ITEM_SIZE = 16;
+//import { ITEM_SIZE } from "../../../constants.js";
 
 /**
  * Render one animation frame.
@@ -80,7 +82,6 @@ export function renderFrame(app: AppContext) {
 	}
 
 	// Ground items
-	const ITEM_SIZE = 16;
 	for (const gi of snapshot.groundItems ?? []) {
 		const sprite = `/assets/items/${gi.itemId}.png`;
 		const img = app.sprites.images.get(sprite);

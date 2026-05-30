@@ -16,6 +16,7 @@ import { dispatchWsMessage } from "../ws/handlers";
 import type { WsHandlerContext } from "../ws/handlers/types";
 import { loadItemRegistry } from "../services/items/itemRegistry";
 import { loadMobRegistry } from "../services/mobs/mobsRegistry";
+import { getPlayerFromId } from "../util/getPlayerFromId";
 
 export let wss: WebSocketServer | null = null;
 export let httpServer: any = null;
@@ -67,7 +68,7 @@ export async function startServer() {
 			}
 
 			// Load or reuse player
-			let player = serverGameState.players[userId];
+			let player = getPlayerFromId(userId);
 			if (!player) {
 				player = await loadPlayer(userId);
 				if (!player) {

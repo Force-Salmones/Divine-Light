@@ -4,6 +4,7 @@ import { type Enemy } from "../state/gameState";
 import { PLAYER_SIZE, APPROACH_MARGIN } from "@/app/constants";
 import { updateRespawns } from "../respawn";
 import { respawnPlayer } from "./respawnPlayer";
+import { getPlayerFromId } from "../util/getPlayerFromId";
 
 export function updateServerMovement(deltaSeconds: number) {
 	// Move all players with targets
@@ -34,7 +35,7 @@ export function updateServerMovement(deltaSeconds: number) {
 		const targetId = enemy.targetPlayerId ?? null;
 
 		if (targetId) {
-			const player = serverGameState.players[targetId];
+			const player = getPlayerFromId(targetId);
 			if (!player) {
 				enemy.targetPlayerId = null;
 				enemy.targetX = enemy.homeX;

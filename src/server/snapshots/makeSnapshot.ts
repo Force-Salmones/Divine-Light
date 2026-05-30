@@ -4,6 +4,7 @@ import type {
 } from "@/shared/protocol/gamestate";
 import { serverGameState } from "../state/gameState";
 import { playerToPublic } from "./playerToPublic";
+import { getPlayerFromId } from "../util/getPlayerFromId";
 
 /**
  * Builds a per-player snapshot from the authoritative server state.
@@ -11,7 +12,7 @@ import { playerToPublic } from "./playerToPublic";
  */
 
 export function makeGameStateSnapshot(playerId: string): GameStateSnapshot {
-	const player = serverGameState.players[playerId];
+	const player = getPlayerFromId(playerId);
 	if (!player) {
 		throw new Error(`Player not found for snapshot: ${playerId}`);
 	}

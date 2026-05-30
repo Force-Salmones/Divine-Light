@@ -2,6 +2,8 @@
  * Hit-testing utilities.
  */
 
+//import { ITEM_SIZE } from "../../../constants.js";
+const ITEM_SIZE = 16;
 import type { GameStateSnapshot } from "../../../shared/protocol/gamestate.js";
 import type { SelectedEntity } from "../state/store.js";
 
@@ -37,4 +39,26 @@ export function getEntityAt(
 		(e) => x >= e.x && x <= e.x + e.size && y >= e.y && y <= e.y + e.size,
 	);
 	return enemy ? { type: "enemy", id: enemy.id } : null;
+}
+
+export type HitGroundItem = { id: string };
+
+export function getGroundItemAt(
+	snapshot: GameStateSnapshot,
+	x: number,
+	y: number,
+): HitGroundItem | null {
+	const items = snapshot.groundItems ?? [];
+	for (let i = items.length - 1; i >= 0; i--) {
+		const gi = items[i]!;
+		if (
+			x >= gi.x &&
+			x <= gi.x + ITEM_SIZE &&
+			y >= gi.y &&
+			y <= gi.y + ITEM_SIZE
+		) {
+			return { id: gi.id };
+		}
+	}
+	return null;
 }

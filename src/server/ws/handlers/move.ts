@@ -1,11 +1,12 @@
 import type { WsHandlerContext } from "./types";
 import { serverGameState } from "@/server/state/gameState";
 import { calculateApproachCoords } from "@/game/logic/movement/calculateApproachCoords";
+import { getPlayerFromId } from "@/server/util/getPlayerFromId";
 
 export function handleMove(ctx: WsHandlerContext, msg: any) {
 	const { x, y, enemyId } = msg;
 
-	const player = serverGameState.players[ctx.playerId];
+	const player = getPlayerFromId(ctx.playerId);
 	if (!player) return;
 	if (typeof enemyId === "number") {
 		// Move toward enemy slightly inside attack range

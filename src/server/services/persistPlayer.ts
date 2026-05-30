@@ -1,8 +1,9 @@
 import { serverGameState } from "../state/gameState";
 import { updateUser } from "@/db/queries/users";
+import { getPlayerFromId } from "../util/getPlayerFromId";
 
 export async function persistPlayer(playerId: string) {
-	const player = serverGameState.players[playerId];
+	const player = getPlayerFromId(playerId);
 	if (!player) return;
 	try {
 		await updateUser(

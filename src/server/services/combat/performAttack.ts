@@ -8,6 +8,7 @@ import {
 import type { AttackEvent } from "@/shared/protocol/gamestate";
 import { rollPhysicalDamage } from "./calcDamage";
 import { defeatEnemy } from "./defeatEnemy";
+import { getPlayerFromId } from "@/server/util/getPlayerFromId";
 
 export function performAttack(
 	playerId: string,
@@ -18,7 +19,7 @@ export function performAttack(
 		return null;
 	}
 
-	const player: Player | undefined = serverGameState.players[playerId];
+	const player = getPlayerFromId(playerId);
 	if (!player) {
 		return null;
 	}

@@ -27,14 +27,17 @@ export function defeatEnemy(player: Player, enemy: Enemy): void {
 			quantity: qty,
 			x,
 			y,
+			spawnedAt: Date.now(),
 		});
 	}
 }
 
 function jitter(x: number, y: number, enemySize: number) {
+	const intX = Math.floor(x);
+	const intY = Math.floor(y);
 	const sizeMod = enemySize + 10;
-	const dropX = randomInt(x - sizeMod, x + sizeMod + 1);
-	const dropY = randomInt(y - sizeMod, y + sizeMod + 1);
+	const dropX = randomInt(intX - sizeMod, intX + sizeMod + 1);
+	const dropY = randomInt(intY - sizeMod, intY + sizeMod + 1);
 
 	return { dropX, dropY };
 }

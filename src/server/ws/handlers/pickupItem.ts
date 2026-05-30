@@ -4,13 +4,14 @@ import { calcDistance } from "../../../shared/util/calcDistance.js";
 import { PICKUP_RANGE } from "@/constants";
 import { addToInventory } from "@/server/services/items/addToInventory";
 import { getItemDef } from "@/server/services/items/itemRegistry";
+import { getPlayerFromId } from "@/server/util/getPlayerFromId.js";
 
 export function handlePickupItem(ctx: WsHandlerContext, msg: any) {
 	const groundItemId = msg.groundItemId;
 	if (!groundItemId) return;
 	const foundItem = serverGameState.groundItems.get(groundItemId);
 	if (!foundItem) return;
-	const foundPlayer = serverGameState.players[ctx.playerId];
+	const foundPlayer = getPlayerFromId(ctx.playerId);
 	if (!foundPlayer) return;
 
 	if (

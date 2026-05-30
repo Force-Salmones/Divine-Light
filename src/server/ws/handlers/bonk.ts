@@ -1,7 +1,7 @@
 import type { WsHandlerContext } from "./types";
-import { serverGameState } from "@/server/state/gameState";
 import { calculateTargetDistance } from "@/game/logic/movement/calculateTargetDistance";
 import { sendWsToPlayer } from "../sendWsToPlayer";
+import { getPlayerFromId } from "@/server/util/getPlayerFromId";
 
 export function handleBonk(ctx: WsHandlerContext, msg: any) {
 	const { targetPlayerId } = msg as {
@@ -12,8 +12,8 @@ export function handleBonk(ctx: WsHandlerContext, msg: any) {
 	if (typeof targetPlayerId !== "string" || !targetPlayerId) return;
 	if (targetPlayerId === pid) return;
 
-	const bonker = serverGameState.players[pid];
-	const bonkee = serverGameState.players[targetPlayerId];
+	const bonker = getPlayerFromId(pid);
+	const bonkee = getPlayerFromId(targetPlayerId);
 	if (!bonker || !bonkee) return;
 
 	const distance = calculateTargetDistance(bonker, bonkee);

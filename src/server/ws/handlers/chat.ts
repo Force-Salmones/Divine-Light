@@ -4,7 +4,7 @@ import { broadcastChatMessage } from "@/server/chatService";
 import { shutdown } from "@/server/services/shutdown";
 import { adminChatCommands } from "@/server/chatCommands";
 import type { ChatCommandContext } from "@/server/chatCommands";
-import { serverGameState } from "@/server/state/gameState";
+import { getPlayerFromId } from "@/server/util/getPlayerFromId";
 
 export function handleChat(ctx: WsHandlerContext, msg: any) {
 	const { text } = msg as { text?: string };
@@ -64,7 +64,7 @@ export function handleChat(ctx: WsHandlerContext, msg: any) {
 		});
 	} else {
 		// Normal player chat: broadcast to everyone, using player name if available
-		const p = serverGameState.players[pid];
+		const p = getPlayerFromId(pid);
 		const fromName = p?.name ?? pid;
 		broadcastChatMessage(trimmed, fromName, false);
 	}

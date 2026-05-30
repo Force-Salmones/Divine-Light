@@ -84,6 +84,7 @@ export type GroundItem = {
 	quantity: number;
 	x: number;
 	y: number;
+	spawnedAt: number;
 };
 
 export type GameStateSnapshot = {

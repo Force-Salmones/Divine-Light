@@ -4,7 +4,7 @@
 
 import type { AppContext } from "../appContext.js";
 import { screenToWorld } from "../render/viewport.js";
-import { getEntityAt } from "./hitTest.js";
+import { getEntityAt, getGroundItemAt } from "./hitTest.js";
 import {
 	attackEnemy,
 	bonkPlayer,
@@ -43,6 +43,14 @@ export function registerCanvasClickHandler(app: AppContext) {
 
 		const x = pt.x;
 		const y = pt.y;
+
+		const groundHit = getGroundItemAt(snapshot, x, y);
+		if (groundHit) {
+			stopAttack(app);
+			app.store.selectedEntity = null;
+			app.ws.send({ type: "pickupItem", groundItemId: groundHit.id });
+			return;
+		}
 
 		const hit = getEntityAt(snapshot, x, y);
 

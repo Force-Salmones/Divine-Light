@@ -3,3 +3,4 @@ export const PLAYER_SIZE = 32;
 export const INFO_PANEL_SPRITE_SIZE = 60;
 export const TICK_INTERVAL_MS = 100;
 export const PICKUP_RANGE = 30;
+export const ITEM_SIZE = 16;
