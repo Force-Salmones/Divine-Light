@@ -1,20 +1,12 @@
 import express, { type Express } from "express";
 import type { Request, Response } from "express";
 import { config } from "../../config";
-import { serverGameState } from "../state/gameState";
-import { makeGameStateSnapshot } from "../snapshots/makeSnapshot";
 
-import { loadPlayer } from "../services/loadPlayer";
 import { middlewareLogResponses } from "../middleware";
 import { handlerCreateUser } from "./handlers/handlerCreateUser";
 import { handlerLogin } from "./handlers/handlerLogin";
 import { handlerLogout } from "./handlers/handlerLogout";
-import {
-	requireJwtForApi,
-	requireJwtForApp,
-	validateJWT,
-	getJwtFromReq,
-} from "../../auth/jwt";
+import { requireJwtForApp, validateJWT, getJwtFromReq } from "../../auth/jwt";
 
 export function registerHttpRoutes(app: Express) {
 	app.use(middlewareLogResponses);
@@ -24,32 +16,6 @@ export function registerHttpRoutes(app: Express) {
 		res.set("Content-Type", "text/plain");
 		res.send("ok");
 	});
-
-	app.get(
-		"/api/game-state",
-		requireJwtForApi,
-		async (req: Request, res: Response) => {
-			const userId = (req as any).userId as string;
-
-			// Ensure player is loaded (supports refreshing the page without a WS connection yet)
-			let player = serverGameState.players[userId];
-			if (!player) {
-				player = await loadPlayer(userId);
-				if (player) {
-					serverGameState.players[userId] = player;
-					serverGameState.selectedTargets[userId] = null;
-				}
-			}
-
-			if (!player) {
-				return res
-					.status(404)
-					.json({ success: false, message: "Player not found" });
-			}
-
-			return res.json({ gameState: makeGameStateSnapshot(userId) });
-		},
-	);
 
 	app.post("/api/create-user", handlerCreateUser);
 
