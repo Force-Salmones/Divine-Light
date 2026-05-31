@@ -1,4 +1,4 @@
-import type { Inventory } from "@/shared/items/inventory.js";
+import type { Bank, Inventory } from "@/shared/items/inventory.js";
 import { db } from "../index.js";
 import { users, type User } from "../schema.js";
 import { eq } from "drizzle-orm";
@@ -57,6 +57,7 @@ export async function updateUser(
 	baseINT: number,
 	baseWIS: number,
 	inventory: Inventory,
+	bank: Bank,
 	gold: number,
 	posX: number,
 	posY: number,
@@ -74,6 +75,7 @@ export async function updateUser(
 			baseINT: baseINT,
 			baseWIS: baseWIS,
 			inventory: inventory,
+			bank: bank,
 			gold: gold,
 			posX: posX,
 			posY: posY,

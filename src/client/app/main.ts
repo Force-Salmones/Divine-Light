@@ -17,6 +17,7 @@ import { registerCanvasClickHandler } from "./input/clickHandler.js";
 import { sendChat, spendStat } from "./actions/gameActions.js";
 import { createLoadingScreenUI } from "./ui/loadingScreen.js";
 import { createInventoryPanelUI } from "./ui/inventoryPanel.js";
+import { registerCanvasDropHandler } from "./input/canvasDropHandler.js";
 
 export function startApp() {
 	const canvas = document.getElementById("game") as HTMLCanvasElement | null;
@@ -136,6 +137,7 @@ export function startApp() {
 		});
 
 		registerCanvasClickHandler(app);
+		registerCanvasDropHandler(app);
 		ws.connect();
 		startGameLoop(app);
 	};

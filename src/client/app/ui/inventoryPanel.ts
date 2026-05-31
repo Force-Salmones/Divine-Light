@@ -62,6 +62,16 @@ export function createInventoryPanelUI(): InventoryPanelUI {
 		container.style.display = visible ? "none" : "block";
 	});
 
+	// offscreen drag preview canvas
+	const dragPreview = document.createElement("canvas");
+	dragPreview.width = 32;
+	dragPreview.height = 32;
+	dragPreview.style.position = "fixed";
+	dragPreview.style.left = "-9999px";
+	dragPreview.style.top = "-9999px";
+	document.body.appendChild(dragPreview);
+	const dragPreviewCtx = dragPreview.getContext("2d");
+
 	function createSlotEl(slotIndex: number) {
 		const slot = document.createElement("div");
 		slot.dataset.slotIndex = String(slotIndex);
@@ -108,6 +118,15 @@ export function createInventoryPanelUI(): InventoryPanelUI {
 
 	for (let i = 0; i < 25; i++) {
 		const { slot, img, badge } = createSlotEl(i);
+		slot.addEventListener("dragstart", (e) => {
+			e.dataTransfer?.setData("text/plain", slot.dataset.slotIndex ?? "");
+			e.dataTransfer!.effectAllowed = "move";
+			if (dragPreviewCtx) {
+				dragPreviewCtx.clearRect(0, 0, 32, 32);
+				dragPreviewCtx.drawImage(img, 0, 0, 32, 32);
+				e.dataTransfer?.setDragImage(dragPreview, 32, 32);
+			}
+		});
 		slotEls.push(slot);
 		slotImgs.push(img);
 		slotBadges.push(badge);

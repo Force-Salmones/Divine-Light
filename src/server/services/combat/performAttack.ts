@@ -34,12 +34,6 @@ export function performAttack(
 	const now = nowMs / 1000; // seconds
 	const timeSinceLastAttack = now - player.lastAttackTime;
 	if (timeSinceLastAttack < player.attackSpeed) {
-		console.log("performAttack: on cooldown", {
-			playerId,
-			enemyId,
-			timeSinceLastAttack,
-			attackSpeed: player.attackSpeed,
-		});
 		return null;
 	}
 

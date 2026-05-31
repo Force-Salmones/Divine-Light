@@ -1,4 +1,4 @@
-import type { Inventory } from "../items/inventory.js";
+import type { Bank, Inventory } from "../items/inventory.js";
 import type { ItemId } from "../items/itemTypes.js";
 
 export type StatKey = "STR" | "VIT" | "DEX" | "LUK" | "INT" | "WIS";
@@ -60,6 +60,8 @@ export type PlayerPrivate = {
 	targetX?: number;
 	targetY?: number;
 	inventory: Inventory;
+	bank: Bank;
+	bankOpen: boolean;
 	lastAttackEvent?: AttackEvent;
 	lastIncomingHit?: IncomingHit;
 	lastLevelUp?: LevelUpEvent;
@@ -87,9 +89,16 @@ export type GroundItem = {
 	spawnedAt: number;
 };
 
+export type NpcPublic = {
+	id: number;
+	name: string;
+	size: number;
+};
+
 export type GameStateSnapshot = {
 	players: Record<string, PlayerPublic>;
 	enemies: EnemyPublic[];
+	npcs: NpcPublic[];
 	groundItems: GroundItem[];
 	selfId: string;
 	player: PlayerPublic & PlayerPrivate;
