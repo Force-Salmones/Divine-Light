@@ -92,6 +92,17 @@ export function renderFrame(app: AppContext) {
 		}
 	}
 
+	// Npcs
+	for (const npc of snapshot.npcs ?? []) {
+		const sprite = `/assets/npcs/${npc.id}.png`;
+		const img = app.sprites.images.get(sprite);
+		if (img) ctx.drawImage(img, npc.x, npc.y, npc.size, npc.size);
+		else {
+			ctx.fillStyle = "rgba(0,255,255,0,0.8";
+			ctx.fillRect(npc.x, npc.y, npc.size, npc.size);
+		}
+	}
+
 	// Other players
 	for (const p of Object.values(snapshot.players ?? {})) {
 		if (p.id === snapshot.selfId) continue;

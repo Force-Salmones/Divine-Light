@@ -17,6 +17,7 @@ import type { WsHandlerContext } from "../ws/handlers/types";
 import { loadItemRegistry } from "../services/items/itemRegistry";
 import { loadMobRegistry } from "../services/mobs/mobsRegistry";
 import { getPlayerFromId } from "../util/getPlayerFromId";
+import { loadNpcRegistry } from "../services/npcs/npcRegistry";
 
 export let wss: WebSocketServer | null = null;
 export let httpServer: any = null;
@@ -27,6 +28,7 @@ export async function startServer() {
 
 	await loadMobRegistry();
 	await loadItemRegistry();
+	await loadNpcRegistry();
 	await initializeEnemies();
 	startTickLoop();
 

@@ -2,7 +2,9 @@
 	"0": {
 		"id": 0,
 		"name": "Mr. Lee",
-		"functionId": "bank",
+		"functionId": "openBank",
+		"x": 500,
+		"y": 50,
 		"size": 32
 	}
 }

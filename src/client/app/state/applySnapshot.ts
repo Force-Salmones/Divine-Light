@@ -173,4 +173,5 @@ export async function applySnapshot(
 	if (isInventoryPanelVisible(app.ui.inventory)) {
 		app.ui.inventory.update(snapshot);
 	}
+	app.ui.bank.sync(snapshot);
 }

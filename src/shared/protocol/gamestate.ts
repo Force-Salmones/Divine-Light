@@ -89,16 +89,19 @@ export type GroundItem = {
 	spawnedAt: number;
 };
 
-export type NpcPublic = {
+export type Npc = {
 	id: number;
 	name: string;
+	x: number;
+	y: number;
+	functionId: string;
 	size: number;
 };
 
 export type GameStateSnapshot = {
 	players: Record<string, PlayerPublic>;
 	enemies: EnemyPublic[];
-	npcs: NpcPublic[];
+	npcs: Npc[];
 	groundItems: GroundItem[];
 	selfId: string;
 	player: PlayerPublic & PlayerPrivate;

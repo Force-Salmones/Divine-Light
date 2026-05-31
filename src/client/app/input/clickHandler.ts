@@ -4,7 +4,7 @@
 
 import type { AppContext } from "../appContext.js";
 import { screenToWorld } from "../render/viewport.js";
-import { getEntityAt, getGroundItemAt } from "./hitTest.js";
+import { getEntityAt, getGroundItemAt, getNpcAt } from "./hitTest.js";
 import {
 	attackEnemy,
 	bonkPlayer,
@@ -50,6 +50,17 @@ export function registerCanvasClickHandler(app: AppContext) {
 			app.store.selectedEntity = null;
 			app.ws.send({ type: "pickupItem", groundItemId: groundHit.id });
 			return;
+		}
+
+		const npcHit = getNpcAt(snapshot, x, y);
+		if (npcHit !== null) {
+			const npcs = snapshot.npcs;
+			const foundNpc = npcs.find((e) => e.id === npcHit);
+			stopAttack(app);
+			if (foundNpc?.functionId === "openBank") {
+				app.ws.send({ type: "openBank" });
+				return;
+			}
 		}
 
 		const hit = getEntityAt(snapshot, x, y);

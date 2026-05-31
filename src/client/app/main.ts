@@ -18,6 +18,7 @@ import { sendChat, spendStat } from "./actions/gameActions.js";
 import { createLoadingScreenUI } from "./ui/loadingScreen.js";
 import { createInventoryPanelUI } from "./ui/inventoryPanel.js";
 import { registerCanvasDropHandler } from "./input/canvasDropHandler.js";
+import { createBankPanelUi } from "./ui/bankPanel.js";
 
 export function startApp() {
 	const canvas = document.getElementById("game") as HTMLCanvasElement | null;
@@ -57,6 +58,10 @@ export function startApp() {
 	const options = createOptionsPanelUI({ store });
 
 	const inventory = createInventoryPanelUI();
+
+	const bank = createBankPanelUi({
+		onClose: () => ws.send({ type: "closeBank" }),
+	});
 
 	const ws = createWsClient({
 		onOpen: () => {
@@ -106,7 +111,7 @@ export function startApp() {
 		sprites,
 		floatingText,
 		ws,
-		ui: { chat, stats, options, inventory },
+		ui: { chat, stats, options, inventory, bank },
 	};
 
 	function relayout() {

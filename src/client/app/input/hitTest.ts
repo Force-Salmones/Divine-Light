@@ -41,6 +41,20 @@ export function getEntityAt(
 	return enemy ? { type: "enemy", id: enemy.id } : null;
 }
 
+export function getNpcAt(
+	snapshot: GameStateSnapshot,
+	x: number,
+	y: number,
+): number | null {
+	const npcs = snapshot.npcs ?? [];
+	for (let i = npcs.length - 1; i >= 0; i--) {
+		const n = npcs[i]!;
+		if (x >= n.x && x <= n.x + n.size && y >= n.y && y <= n.y + n.size)
+			return n.id;
+	}
+	return null;
+}
+
 export type HitGroundItem = { id: string };
 
 export function getGroundItemAt(

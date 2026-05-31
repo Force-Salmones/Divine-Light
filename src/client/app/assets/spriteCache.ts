@@ -45,6 +45,10 @@ export async function refreshSpritesIfNeeded(
 		spriteUrls.add(e.sprite);
 	}
 
+	for (const e of snapshot.npcs) {
+		spriteUrls.add(`/assets/npcs/${e.id}.png`);
+	}
+
 	for (const gi of snapshot.groundItems) {
 		spriteUrls.add(`/assets/items/${gi.itemId}.png`);
 	}

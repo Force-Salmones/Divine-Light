@@ -5,6 +5,7 @@ import type {
 import { serverGameState } from "../state/gameState";
 import { playerToPublic } from "./playerToPublic";
 import { getPlayerFromId } from "../util/getPlayerFromId";
+import { getNpcReg } from "../services/npcs/npcRegistry";
 
 /**
  * Builds a per-player snapshot from the authoritative server state.
@@ -26,9 +27,12 @@ export function makeGameStateSnapshot(playerId: string): GameStateSnapshot {
 		players[player] = playerToPublic(serverGameState.players[player]);
 	}
 
+	const npcReg = getNpcReg();
+
 	return {
 		players: players,
 		enemies: serverGameState.enemies,
+		npcs: [...npcReg.values()],
 		groundItems: Array.from(serverGameState.groundItems.values()),
 		selfId: playerId,
 		player: player,

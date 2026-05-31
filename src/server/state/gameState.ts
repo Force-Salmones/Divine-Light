@@ -3,7 +3,6 @@ import type {
 	AttackEvent,
 	EnemyPublic,
 	GroundItem,
-	NpcPublic,
 	PlayerPrivate,
 	PlayerPublic,
 } from "../../shared/protocol/gamestate";
@@ -52,12 +51,6 @@ export type EnemyPrivate = {
 };
 
 export type Enemy = EnemyPublic & EnemyPrivate;
-
-export type NpcPrivate = {
-	functionId: string;
-};
-
-export type Npc = NpcPublic & NpcPrivate;
 
 export const serverGameState: ServerGameState = {
 	players: {},
