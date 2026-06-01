@@ -6,5 +6,15 @@
 		"stackSize": 1,
 		"flavor": "Divine Light's first item",
 		"typeProps": {}
+	},
+	"1": {
+		"id": 1,
+		"name": "Health Potion (Swig)",
+		"type": "use",
+		"stackSize": 10,
+		"flavor": "There's almost nothing left",
+		"typeProps": {
+			"effectId": "healthPotionSwig"
+		}
 	}
 }

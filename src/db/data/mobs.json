@@ -41,7 +41,12 @@
 		"respawnTime": 10,
 		"aggressive": false,
 		"retreats": false,
-		"drops": {},
+		"drops": {
+			"1": {
+				"rate": 0.25,
+				"amount": [1, 4]
+			}
+		},
 		"size": 25
 	},
 	"2": {

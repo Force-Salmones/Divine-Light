@@ -12,6 +12,7 @@ export type InventoryPanelUI = {
 
 export function createInventoryPanelUI(opts: {
 	onSwapItem: (a: SlotRef, b: SlotRef) => void;
+	onActivateSlot?: (slot: SlotRef) => void;
 }): InventoryPanelUI {
 	const button = document.createElement("button");
 	button.textContent = "Inventory";
@@ -93,6 +94,13 @@ export function createInventoryPanelUI(opts: {
 			from: "inventory",
 			slotIndex: i,
 		};
+
+		slot.addEventListener("dblclick", (e) => {
+			e.preventDefault();
+			if (!slot.dataset.itemId) return;
+			opts.onActivateSlot?.({ from: "inventory", slotIndex: i });
+		});
+
 		slot.addEventListener("dragstart", (e) => {
 			e.dataTransfer?.setData(
 				"application/x-slot-index",

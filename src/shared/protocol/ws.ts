@@ -4,6 +4,7 @@
  * IMPORTANT: This module must stay platform-agnostic (no imports from server/client code).
  */
 
+import type { ItemId } from "../items/itemTypes.js";
 import type { GameStateSnapshot, StatKey } from "./gamestate.js";
 
 export type SlotContainer = "inventory" | "bank";
@@ -25,7 +26,22 @@ export type ClientToServerMessage =
 	| { type: "dropItem"; slot: SlotRef }
 	| { type: "swapItem"; a: SlotRef; b: SlotRef }
 	| { type: "openBank" }
-	| { type: "closeBank" };
+	| { type: "closeBank" }
+	| {
+			type: "activate";
+			source: ActivateSource;
+			// target?:
+	  };
+
+export type ActivateTarget =
+	| { kind: "self" }
+	| { kind: "entity"; entityId: string }
+	| { kind: "position"; x: number; y: number };
+
+export type ActivateSource =
+	| { kind: "itemId"; itemId: ItemId }
+	| { kind: "inventorySlot"; slot: SlotRef }
+	| { kind: "skillId"; skillId: string };
 
 export type ServerToClientMessage =
 	| { type: "gameState"; gameState: GameStateSnapshot }

@@ -61,6 +61,11 @@ export function startApp() {
 
 	const inventory = createInventoryPanelUI({
 		onSwapItem: (a, b) => ws.send({ type: "swapItem", a, b }),
+		onActivateSlot: (slot) =>
+			ws.send({
+				type: "activate",
+				source: { kind: "inventorySlot", slot },
+			}),
 	});
 
 	const bank = createBankPanelUi({

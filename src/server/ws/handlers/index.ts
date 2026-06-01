@@ -10,6 +10,7 @@ import { handleDropItem } from "./dropItem";
 import { handleOpenBank } from "./openBank";
 import { handleCloseBank } from "./closeBank";
 import { handleSwapItem } from "./swapItem";
+import { handleActivate } from "./activate";
 
 const handlers: Record<string, (ctx: WsHandlerContext, msg: any) => void> = {
 	move: handleMove,
@@ -23,6 +24,7 @@ const handlers: Record<string, (ctx: WsHandlerContext, msg: any) => void> = {
 	swapItem: handleSwapItem,
 	openBank: handleOpenBank,
 	closeBank: handleCloseBank,
+	activate: handleActivate,
 };
 
 export function dispatchWsMessage(ctx: WsHandlerContext, msg: any) {
