@@ -1,4 +1,5 @@
 import type { AppContext } from "../appContext";
+import type { DragPayload } from "./dragPayload.js";
 
 export function registerCanvasDropHandler(app: AppContext) {
 	app.canvas.addEventListener("dragover", (e) => {
@@ -8,15 +9,26 @@ export function registerCanvasDropHandler(app: AppContext) {
 	app.canvas.addEventListener("drop", (e) => {
 		e.preventDefault();
 
-		const raw = e.dataTransfer?.getData("text/plain") ?? "";
-		const slotIndex = Number(raw);
+		const raw = e.dataTransfer?.getData("application/x-slot-index") ?? "";
+		let payload: DragPayload | null = null;
 
-		if (!Number.isInteger(slotIndex) || slotIndex < 0 || slotIndex > 24) {
-			console.warn(
-				`Invalid slot index in app.canvas drop listener: ${slotIndex}`,
-			);
+		try {
+			payload = JSON.parse(raw) as DragPayload;
+		} catch {}
+
+		if (
+			!payload ||
+			payload.type !== "slotItem" ||
+			(payload.from !== "inventory" && payload.from !== "bank") ||
+			!Number.isInteger(payload.slotIndex)
+		) {
+			console.warn("Invalid drag payload in canvas drop:", raw);
 			return;
 		}
-		app.ws.send({ type: "dropItem", slotIndex });
+
+		app.ws.send({
+			type: "dropItem",
+			slot: { from: payload.from, slotIndex: payload.slotIndex },
+		});
 	});
 }

@@ -6,6 +6,13 @@
 
 import type { GameStateSnapshot, StatKey } from "./gamestate.js";
 
+export type SlotContainer = "inventory" | "bank";
+
+export type SlotRef = {
+	from: SlotContainer;
+	slotIndex: number;
+};
+
 export type ClientToServerMessage =
 	| { type: "chat"; text: string }
 	| { type: "move"; x: number; y: number }
@@ -15,7 +22,8 @@ export type ClientToServerMessage =
 	| { type: "bonkPlayer"; targetPlayerId: string }
 	| { type: "spendStat"; stat: StatKey }
 	| { type: "pickupItem"; groundItemId?: string }
-	| { type: "dropItem"; slotIndex: number }
+	| { type: "dropItem"; slot: SlotRef }
+	| { type: "swapItem"; a: SlotRef; b: SlotRef }
 	| { type: "openBank" }
 	| { type: "closeBank" };
 
@@ -36,10 +44,3 @@ export type ServerToClientMessage =
 			y: number;
 			timestamp: number;
 	  };
-
-export type slotContainer = "inventory" | "bank";
-
-export type SlotRef = {
-	from: slotContainer;
-	slotIndex: number;
-};

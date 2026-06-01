@@ -1,15 +1,18 @@
 import { getPlayerFromId } from "@/server/util/getPlayerFromId";
 import type { WsHandlerContext } from "./types";
 import { createGroundItem } from "@/server/services/items/createGroundItem";
+import type { SlotRef } from "@/shared/protocol/ws";
+import { validateSlotRef } from "@/shared/protocol/helpers/validateSlotRef";
 
 export function handleDropItem(ctx: WsHandlerContext, msg: any) {
-	const { slotIndex } = msg;
-	if (!Number.isInteger(slotIndex)) return;
-	if (slotIndex > 24 || slotIndex < 0) return;
 	const player = getPlayerFromId(ctx.playerId);
 	if (!player) return;
 
-	const slot = player.inventory.slots[slotIndex];
+	const res: SlotRef | undefined = validateSlotRef(msg.slot, player.bankOpen);
+	if (!res) return;
+	const { from, slotIndex } = res;
+
+	const slot = player[from].slots[slotIndex];
 	if (!slot) return;
 	createGroundItem(
 		slot.itemId,
@@ -19,5 +22,5 @@ export function handleDropItem(ctx: WsHandlerContext, msg: any) {
 		player.size,
 	);
 
-	player.inventory.slots[slotIndex] = null;
+	player[from].slots[slotIndex] = null;
 }

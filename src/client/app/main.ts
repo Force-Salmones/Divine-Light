@@ -10,7 +10,7 @@ import { createChatUI } from "./ui/chat.js";
 import { createStatsPanelUI } from "./ui/statsPanel.js";
 import { createOptionsPanelUI } from "./ui/optionsPanel.js";
 import { layoutOverlayElements } from "./ui/layout.js";
-import { createWsClient } from "./net/wsClient.js";
+import { createWsClient, type WsClient } from "./net/wsClient.js";
 import { applySnapshot } from "./state/applySnapshot.js";
 import { startGameLoop } from "./engine/loop.js";
 import { registerCanvasClickHandler } from "./input/clickHandler.js";
@@ -43,6 +43,8 @@ export function startApp() {
 	let app!: AppContext;
 
 	// UI
+	let ws!: WsClient;
+
 	const chat = createChatUI({
 		onSend: (text) => {
 			sendChat(app, text);
@@ -57,13 +59,16 @@ export function startApp() {
 
 	const options = createOptionsPanelUI({ store });
 
-	const inventory = createInventoryPanelUI();
+	const inventory = createInventoryPanelUI({
+		onSwapItem: (a, b) => ws.send({ type: "swapItem", a, b }),
+	});
 
 	const bank = createBankPanelUi({
 		onClose: () => ws.send({ type: "closeBank" }),
+		onSwapItem: (a, b) => ws.send({ type: "swapItem", a, b }),
 	});
 
-	const ws = createWsClient({
+	ws = createWsClient({
 		onOpen: () => {
 			console.log("Connected to game websocket");
 		},

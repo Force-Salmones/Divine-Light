@@ -9,6 +9,7 @@ import { handlePickupItem } from "./pickupItem";
 import { handleDropItem } from "./dropItem";
 import { handleOpenBank } from "./openBank";
 import { handleCloseBank } from "./closeBank";
+import { handleSwapItem } from "./swapItem";
 
 const handlers: Record<string, (ctx: WsHandlerContext, msg: any) => void> = {
 	move: handleMove,
@@ -19,6 +20,7 @@ const handlers: Record<string, (ctx: WsHandlerContext, msg: any) => void> = {
 	chat: handleChat,
 	pickupItem: handlePickupItem,
 	dropItem: handleDropItem,
+	swapItem: handleSwapItem,
 	openBank: handleOpenBank,
 	closeBank: handleCloseBank,
 };

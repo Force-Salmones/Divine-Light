@@ -1,4 +1,6 @@
+import type { SlotRef } from "../../../shared/protocol/ws.js";
 import type { GameStateSnapshot } from "../../../shared/protocol/gamestate.js";
+import type { DragPayload } from "../input/dragPayload.js";
 import { createSlotEl } from "./createSlotEl.js";
 
 export type BankPanelUI = {
@@ -6,7 +8,10 @@ export type BankPanelUI = {
 	sync: (snapshot: GameStateSnapshot | null) => void;
 };
 
-export function createBankPanelUi(opts: { onClose: () => void }): BankPanelUI {
+export function createBankPanelUi(opts: {
+	onClose: () => void;
+	onSwapItem: (a: SlotRef, b: SlotRef) => void;
+}): BankPanelUI {
 	const container = document.createElement("div");
 	container.style.position = "fixed";
 	container.style.right = "560px";
@@ -49,6 +54,16 @@ export function createBankPanelUi(opts: { onClose: () => void }): BankPanelUI {
 		opts.onClose();
 	});
 
+	// offscreen drag preview canvas
+	const dragPreview = document.createElement("canvas");
+	dragPreview.width = 32;
+	dragPreview.height = 32;
+	dragPreview.style.position = "fixed";
+	dragPreview.style.left = "-9999px";
+	dragPreview.style.top = "-9999px";
+	document.body.appendChild(dragPreview);
+	const dragPreviewCtx = dragPreview.getContext("2d");
+
 	headerRow.appendChild(title);
 	headerRow.appendChild(closeButton);
 	container.appendChild(headerRow);
@@ -71,6 +86,57 @@ export function createBankPanelUi(opts: { onClose: () => void }): BankPanelUI {
 
 	for (let i = 0; i < 98; i++) {
 		const { slot, img, badge } = createSlotEl(i);
+		const payload: DragPayload = {
+			type: "slotItem",
+			from: "bank",
+			slotIndex: i,
+		};
+		slot.addEventListener("dragstart", (e) => {
+			e.dataTransfer?.setData(
+				"application/x-slot-index",
+				JSON.stringify(payload) ?? "",
+			);
+			e.dataTransfer!.effectAllowed = "move";
+			if (dragPreviewCtx) {
+				dragPreviewCtx.clearRect(0, 0, 32, 32);
+				dragPreviewCtx.drawImage(img, 0, 0, 32, 32);
+				e.dataTransfer?.setDragImage(dragPreview, 32, 32);
+			}
+		});
+
+		slot.addEventListener("dragover", (e) => {
+			e.preventDefault();
+		});
+
+		slot.addEventListener("drop", (e) => {
+			e.preventDefault();
+			const raw =
+				e.dataTransfer?.getData("application/x-slot-index") ?? "";
+			let parsed: DragPayload | null = null;
+			try {
+				parsed = JSON.parse(raw) as DragPayload;
+			} catch {}
+
+			if (
+				!parsed ||
+				parsed.type !== "slotItem" ||
+				(parsed.from !== "inventory" && parsed.from !== "bank") ||
+				!Number.isInteger(parsed.slotIndex)
+			) {
+				return;
+			}
+
+			const a: SlotRef = {
+				from: parsed.from,
+				slotIndex: parsed.slotIndex,
+			};
+			const b: SlotRef = { from: "bank", slotIndex: i };
+
+			if (a.from === b.from && a.slotIndex === b.slotIndex) return;
+
+			opts.onSwapItem(a, b);
+		});
+
 		slotEls.push(slot);
 		slotImgs.push(img);
 		slotBadges.push(badge);

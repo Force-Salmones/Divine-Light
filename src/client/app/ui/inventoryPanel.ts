@@ -1,4 +1,6 @@
+import type { SlotRef } from "../../../shared/protocol/ws.js";
 import type { GameStateSnapshot } from "../../../shared/protocol/gamestate.js";
+import type { DragPayload } from "../input/dragPayload.js";
 import { createSlotEl } from "./createSlotEl.js";
 
 export type InventoryPanelUI = {
@@ -8,7 +10,9 @@ export type InventoryPanelUI = {
 	update: (snapshot: GameStateSnapshot | null) => void;
 };
 
-export function createInventoryPanelUI(): InventoryPanelUI {
+export function createInventoryPanelUI(opts: {
+	onSwapItem: (a: SlotRef, b: SlotRef) => void;
+}): InventoryPanelUI {
 	const button = document.createElement("button");
 	button.textContent = "Inventory";
 	button.style.position = "fixed";
@@ -84,8 +88,16 @@ export function createInventoryPanelUI(): InventoryPanelUI {
 
 	for (let i = 0; i < 25; i++) {
 		const { slot, img, badge } = createSlotEl(i);
+		const payload: DragPayload = {
+			type: "slotItem",
+			from: "inventory",
+			slotIndex: i,
+		};
 		slot.addEventListener("dragstart", (e) => {
-			e.dataTransfer?.setData("text/plain", slot.dataset.slotIndex ?? "");
+			e.dataTransfer?.setData(
+				"application/x-slot-index",
+				JSON.stringify(payload) ?? "",
+			);
 			e.dataTransfer!.effectAllowed = "move";
 			if (dragPreviewCtx) {
 				dragPreviewCtx.clearRect(0, 0, 32, 32);
@@ -93,14 +105,47 @@ export function createInventoryPanelUI(): InventoryPanelUI {
 				e.dataTransfer?.setDragImage(dragPreview, 32, 32);
 			}
 		});
+
+		slot.addEventListener("dragover", (e) => {
+			e.preventDefault();
+		});
+
+		slot.addEventListener("drop", (e) => {
+			e.preventDefault();
+			const raw =
+				e.dataTransfer?.getData("application/x-slot-index") ?? "";
+			let parsed: DragPayload | null = null;
+			try {
+				parsed = JSON.parse(raw) as DragPayload;
+			} catch {}
+
+			if (
+				!parsed ||
+				parsed.type !== "slotItem" ||
+				(parsed.from !== "inventory" && parsed.from !== "bank") ||
+				!Number.isInteger(parsed.slotIndex)
+			) {
+				return;
+			}
+
+			const a: SlotRef = {
+				from: parsed.from,
+				slotIndex: parsed.slotIndex,
+			};
+			const b: SlotRef = { from: "inventory", slotIndex: i };
+
+			if (a.from === b.from && a.slotIndex === b.slotIndex) return;
+
+			opts.onSwapItem(a, b);
+		});
+
 		slotEls.push(slot);
 		slotImgs.push(img);
 		slotBadges.push(badge);
 		invGrid.appendChild(slot);
+
+		container.appendChild(invGrid);
 	}
-
-	container.appendChild(invGrid);
-
 	function update(snapshot: GameStateSnapshot | null) {
 		const gold = snapshot?.player?.gold ?? 0;
 		goldRow.textContent = `Gold: ${gold}`;
@@ -145,7 +190,6 @@ export function createInventoryPanelUI(): InventoryPanelUI {
 
 	return { button, container, slotEls, update };
 }
-
 export function isInventoryPanelVisible(inv: InventoryPanelUI): boolean {
 	return inv.container.style.display !== "none";
 }
