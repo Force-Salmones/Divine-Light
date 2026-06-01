@@ -123,6 +123,7 @@ export function startApp() {
 			optionsContainer: options.container,
 			inventoryButton: inventory.button,
 			inventoryContainer: inventory.container,
+			bankContainer: bank.container,
 		});
 	}
 

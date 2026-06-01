@@ -11,7 +11,7 @@ export function createBankPanelUi(opts: { onClose: () => void }): BankPanelUI {
 	container.style.position = "fixed";
 	container.style.right = "560px";
 	container.style.bottom = "120px";
-	container.style.width = "320px";
+	container.style.width = "332px";
 	container.style.maxHeight = "360px";
 	container.style.overflowY = "auto";
 	container.style.background = "rgba(0, 0, 0, 0.85)";
@@ -56,6 +56,7 @@ export function createBankPanelUi(opts: { onClose: () => void }): BankPanelUI {
 	const gridWrapper = document.createElement("div");
 	gridWrapper.style.maxHeight = "360px";
 	gridWrapper.style.overflowY = "auto";
+	gridWrapper.style.paddingRight = "12px";
 	container.append(gridWrapper);
 
 	const grid = document.createElement("div");

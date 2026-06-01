@@ -36,3 +36,10 @@ export type ServerToClientMessage =
 			y: number;
 			timestamp: number;
 	  };
+
+export type slotContainer = "inventory" | "bank";
+
+export type SlotRef = {
+	from: slotContainer;
+	slotIndex: number;
+};

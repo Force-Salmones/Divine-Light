@@ -13,6 +13,7 @@ export type OverlayHandles = {
 	optionsContainer?: HTMLDivElement;
 	inventoryButton?: HTMLButtonElement;
 	inventoryContainer?: HTMLDivElement;
+	bankContainer?: HTMLDivElement;
 };
 
 /**
@@ -74,5 +75,10 @@ export function layoutOverlayElements(
 	if (handles.inventoryContainer) {
 		handles.inventoryContainer.style.right = `${outsideRight + 290 + 270}px`;
 		handles.inventoryContainer.style.bottom = `${panelBottom}px`;
+	}
+
+	if (handles.bankContainer) {
+		handles.bankContainer.style.right = `${outsideRight + 290 + 270 + 380}px`;
+		handles.bankContainer.style.bottom = `${panelBottom}px`;
 	}
 }
