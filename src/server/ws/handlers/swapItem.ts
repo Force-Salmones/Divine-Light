@@ -1,6 +1,7 @@
 import { getPlayerFromId } from "@/server/util/getPlayerFromId";
 import { validateSlotRef } from "@/shared/protocol/helpers/validateSlotRef";
 import type { WsHandlerContext } from "./types";
+import { getItemDef } from "@/server/services/items/itemRegistry";
 
 export function handleSwapItem(ctx: WsHandlerContext, msg: any) {
 	const player = getPlayerFromId(ctx.playerId);
@@ -11,9 +12,38 @@ export function handleSwapItem(ctx: WsHandlerContext, msg: any) {
 	const b = validateSlotRef(msg.b, player.bankOpen);
 	if (!b) return;
 
-	const slotA = player[a.from].slots[a.slotIndex];
-	const slotB = player[b.from].slots[b.slotIndex];
-	const temp = slotB;
-	player[b.from].slots[b.slotIndex] = slotA ?? null;
-	player[a.from].slots[a.slotIndex] = temp ?? null;
+	const slotA = getSlot(player, a);
+	const slotB = getSlot(player, b);
+
+	if (!canPlaceInto(player, b, slotA)) return;
+	if (!canPlaceInto(player, a, slotB)) return;
+
+	setSlot(player, b, slotA);
+	setSlot(player, a, slotB);
+}
+
+function getSlot(player: any, ref: any) {
+	if (ref.from === "equipment") return player.equipment[ref.slotKey] ?? null;
+	return player[ref.from].slots[ref.slotIndex] ?? null;
+}
+
+function setSlot(player: any, ref: any, value: any) {
+	if (ref.from === "equipment") {
+		player.equipment[ref.slotKey] = value ?? null;
+		return;
+	}
+	player[ref.from].slots[ref.slotIndex] = value ?? null;
+}
+
+function canPlaceInto(player: any, destRef: any, item: any): boolean {
+	if (destRef.from !== "equipment") return true;
+
+	if (!item) return true;
+
+	if (item.kind !== "equip") return false;
+
+	const def = getItemDef(item.itemId);
+	if (def.type !== "equip") return false;
+
+	return def.typeProps.subType === destRef.slotKey;
 }

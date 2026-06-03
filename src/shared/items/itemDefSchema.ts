@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const ItemTypeSchema = z.enum(["etc", "use"]);
+const ItemTypeSchema = z.enum(["etc", "use", "equip"]);
 
 const ItemBaseDefSchema = z.object({
 	id: z.number().int().min(0),
@@ -22,9 +22,17 @@ const ItemUseDefSchema = ItemBaseDefSchema.extend({
 	}),
 });
 
+const ItemEquipDefSchema = ItemBaseDefSchema.extend({
+	type: z.literal("equip"),
+	typeProps: z.object({
+		subType: z.enum(["weapon", "charm"]),
+	}),
+});
+
 export const ItemDefSchema = z.discriminatedUnion("type", [
 	ItemEtcDefSchema,
 	ItemUseDefSchema,
+	ItemEquipDefSchema,
 ]);
 
 export const ItemDefsFileSchema = z

@@ -15,6 +15,7 @@ import type { StatsPanelUI } from "./ui/statsPanel.js";
 import type { OptionsPanelUI } from "./ui/optionsPanel.js";
 import type { InventoryPanelUI } from "./ui/inventoryPanel.js";
 import type { BankPanelUI } from "./ui/bankPanel.js";
+import type { EquipmentPanelUI } from "./ui/equipmentPanel.js";
 
 export type AppContext = {
 	/** The game canvas element. */
@@ -48,5 +49,6 @@ export type AppContext = {
 		options: OptionsPanelUI;
 		inventory: InventoryPanelUI;
 		bank: BankPanelUI;
+		equipment: EquipmentPanelUI;
 	};
 };

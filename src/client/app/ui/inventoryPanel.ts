@@ -127,24 +127,36 @@ export function createInventoryPanelUI(opts: {
 				parsed = JSON.parse(raw) as DragPayload;
 			} catch {}
 
+			if (!parsed || parsed.type !== "slotItem") {
+				return;
+			}
+
 			if (
-				!parsed ||
-				parsed.type !== "slotItem" ||
-				(parsed.from !== "inventory" && parsed.from !== "bank") ||
-				!Number.isInteger(parsed.slotIndex)
+				parsed.from !== "inventory" &&
+				parsed.from !== "bank" &&
+				parsed.from !== "equipment"
 			) {
 				return;
 			}
 
-			const a: SlotRef = {
-				from: parsed.from,
-				slotIndex: parsed.slotIndex,
-			};
 			const b: SlotRef = { from: "inventory", slotIndex: i };
 
-			if (a.from === b.from && a.slotIndex === b.slotIndex) return;
+			if (parsed.from !== "equipment") {
+				const a: SlotRef = {
+					from: parsed.from,
+					slotIndex: parsed.slotIndex,
+				};
 
-			opts.onSwapItem(a, b);
+				if (a.from === b.from && a.slotIndex === b.slotIndex) return;
+
+				opts.onSwapItem(a, b);
+			} else {
+				const a: SlotRef = {
+					from: "equipment",
+					slotKey: parsed.slotKey,
+				};
+				opts.onSwapItem(a, b);
+			}
 		});
 
 		slotEls.push(slot);
@@ -179,17 +191,25 @@ export function createInventoryPanelUI(opts: {
 			}
 
 			slot.dataset.itemId = String(item.itemId);
-			slot.dataset.quantity = String(item.quantity);
 			slot.draggable = true;
 
 			img.src = `/assets/items/${item.itemId}.png`;
 			img.style.display = "block";
 
-			if (item.quantity > 1) {
-				badge.textContent = String(item.quantity);
-				badge.style.display = "block";
+			if (item.kind === "stack") {
+				slot.dataset.quantity = String(item.quantity);
+
+				if (item.quantity > 1) {
+					badge.textContent = String(item.quantity);
+					badge.style.display = "block";
+				} else {
+					badge.style.display = "none";
+					badge.textContent = "";
+				}
 			} else {
+				delete slot.dataset.quantity;
 				badge.style.display = "none";
+				badge.textContent = "";
 			}
 
 			slot.title = `Item ${item.itemId}`;

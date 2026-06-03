@@ -1,11 +1,16 @@
-import type { ItemId } from "./itemTypes.js";
-
-export type InventorySlot = null | { itemId: ItemId; quantity: number };
+import type { Slot } from "./itemInstance";
 
 export type Inventory = {
-	slots: InventorySlot[]; //25
+	slots: Slot[]; //25
 };
 
 export type Bank = {
-	slots: InventorySlot[]; //98
+	slots: Slot[]; //98
+};
+
+export type EquipmentSlotKey = "weapon" | "charm";
+
+export type Equipment = {
+	weapon: Slot | null;
+	charm: Slot | null;
 };

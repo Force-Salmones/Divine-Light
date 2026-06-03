@@ -19,6 +19,7 @@ import { createLoadingScreenUI } from "./ui/loadingScreen.js";
 import { createInventoryPanelUI } from "./ui/inventoryPanel.js";
 import { registerCanvasDropHandler } from "./input/canvasDropHandler.js";
 import { createBankPanelUi } from "./ui/bankPanel.js";
+import { createEquipmentPanelUI } from "./ui/equipmentPanel.js";
 
 export function startApp() {
 	const canvas = document.getElementById("game") as HTMLCanvasElement | null;
@@ -73,6 +74,10 @@ export function startApp() {
 		onSwapItem: (a, b) => ws.send({ type: "swapItem", a, b }),
 	});
 
+	const equipment = createEquipmentPanelUI({
+		onSwapItem: (a, b) => ws.send({ type: "swapItem", a, b }),
+	});
+
 	ws = createWsClient({
 		onOpen: () => {
 			console.log("Connected to game websocket");
@@ -121,7 +126,7 @@ export function startApp() {
 		sprites,
 		floatingText,
 		ws,
-		ui: { chat, stats, options, inventory, bank },
+		ui: { chat, stats, options, inventory, bank, equipment },
 	};
 
 	function relayout() {
@@ -134,6 +139,8 @@ export function startApp() {
 			inventoryButton: inventory.button,
 			inventoryContainer: inventory.container,
 			bankContainer: bank.container,
+			equipmentButton: equipment.button,
+			equipmentContainer: equipment.container,
 		});
 	}
 

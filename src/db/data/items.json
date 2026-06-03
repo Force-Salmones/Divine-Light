@@ -16,5 +16,25 @@
 		"typeProps": {
 			"effectId": "healthPotionSwig"
 		}
+	},
+	"2": {
+		"id": 2,
+		"name": "Wooden Stick",
+		"type": "equip",
+		"stackSize": 1,
+		"flavor": "Better than your hands at least",
+		"typeProps": {
+			"subType": "weapon"
+		}
+	},
+	"3": {
+		"id": 3,
+		"name": "Slime Charm",
+		"type": "equip",
+		"stackSize": 1,
+		"flavor": "Somehow, it feels judgemental",
+		"typeProps": {
+			"subType": "charm"
+		}
 	}
 }

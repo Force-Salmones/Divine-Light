@@ -19,6 +19,7 @@ export async function persistPlayer(playerId: string) {
 			player.WIS,
 			player.inventory,
 			player.bank,
+			player.equipment,
 			player.gold,
 			Math.round(player.x),
 			Math.round(player.y),

@@ -1,5 +1,5 @@
-import type { ItemId } from "../../../shared/items/itemTypes.js";
 import type { Inventory } from "../../../shared/items/inventory.js";
+import type { SlotItem } from "@/shared/items/itemInstance.js";
 
 export type AddToInventoryResult = {
 	added: number;
@@ -9,35 +9,46 @@ export type AddToInventoryResult = {
 
 export function addToInventory(
 	inv: Inventory,
-	itemId: ItemId,
-	quantity: number,
-	stackSize: number,
+	item: SlotItem,
+	stackSize?: number,
 ): AddToInventoryResult {
+	if (!Array.isArray(inv.slots)) {
+		throw new Error("addToInventory: inv.slots missing");
+	}
+
+	// Equip instances
+	if (item.kind === "equip") {
+		const i = inv.slots.findIndex((s) => s === null);
+		if (i === -1) return { added: 0, remaining: 1, touchedSlots: [] };
+		inv.slots[i] = item;
+		return { added: 1, remaining: 0, touchedSlots: [i] };
+	}
+
+	// Stack items
+	const quantity = item.quantity;
+
 	if (!Number.isInteger(quantity) || quantity <= 0) {
 		throw new Error(
 			`addToInventory: quantity must be int > 0 (got ${quantity})`,
 		);
 	}
-	if (!Number.isInteger(stackSize) || stackSize <= 0) {
+	if (!Number.isInteger(stackSize) || (stackSize as number) <= 0) {
 		throw new Error(
 			`addToInventory: stackSize must be int > 0 (got ${stackSize})`,
 		);
-	}
-	if (!Array.isArray(inv.slots)) {
-		throw new Error("addToInventory: inv.slots missing");
 	}
 
 	let remaining = quantity;
 	const touched = new Set<number>();
 
 	// Fill existing stacks if possible
-	if (stackSize > 1) {
+	if ((stackSize as number) > 1) {
 		for (let i = 0; i < inv.slots.length && remaining > 0; i++) {
 			const slot = inv.slots[i];
-			if (!slot) continue;
-			if (slot.itemId !== itemId) continue;
+			if (!slot || slot.kind !== "stack") continue;
+			if (slot.itemId !== item.itemId) continue;
 
-			const canAdd = stackSize - slot.quantity;
+			const canAdd = (stackSize as number) - slot.quantity;
 			if (canAdd <= 0) continue;
 
 			const toAdd = Math.min(canAdd, remaining);
@@ -52,8 +63,8 @@ export function addToInventory(
 		const slot = inv.slots[i];
 		if (slot !== null) continue;
 
-		const toAdd = Math.min(stackSize, remaining);
-		inv.slots[i] = { itemId, quantity: toAdd };
+		const toAdd = Math.min(stackSize as number, remaining);
+		inv.slots[i] = { kind: "stack", itemId: item.itemId, quantity: toAdd };
 		remaining -= toAdd;
 		touched.add(i);
 	}

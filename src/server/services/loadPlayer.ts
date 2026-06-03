@@ -3,7 +3,8 @@ import type { User } from "@/db/schema";
 import type { Player } from "../state/gameState";
 import { expToLevelUp } from "./progression/gainExperience";
 import { validateInventory } from "./items/validateInventory";
-import type { Bank } from "@/shared/items/inventory";
+import { validateBank } from "./items/validateBank";
+import { validateEquipment } from "./items/validateEquipment";
 
 export async function loadPlayer(
 	playerId: string,
@@ -40,9 +41,9 @@ export async function loadPlayer(
 		attackSpeed: 1,
 		lastAttackTime: 0,
 		inventory: await validateInventory(dbUser.inventory, dbUser.id),
-		//validate later
-		bank: dbUser.bank as Bank,
+		bank: await validateBank(dbUser.bank, dbUser.id),
 		bankOpen: false,
+		equipment: await validateEquipment(dbUser.equipment),
 		size: 32,
 	};
 	return player;

@@ -2,6 +2,7 @@ export function createSlotEl(slotIndex: number) {
 	const slot = document.createElement("div");
 	slot.dataset.slotIndex = String(slotIndex);
 	slot.style.height = "36px";
+	slot.style.width = "36px";
 	slot.style.border = "1px solid rgba(255,255,255,0.35)";
 	slot.style.background = "rgba(255,255,255,0.06)";
 	slot.style.borderRadius = "3px";

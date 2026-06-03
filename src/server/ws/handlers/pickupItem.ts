@@ -20,17 +20,35 @@ export function handlePickupItem(ctx: WsHandlerContext, msg: any) {
 	)
 		return;
 
-	const itemDef = getItemDef(Number(foundItem.itemId));
-	const res = addToInventory(
-		foundPlayer.inventory,
-		Number(foundItem.itemId),
-		foundItem.quantity,
-		itemDef.stackSize,
-	);
+	if (foundItem.kind === "stack") {
+		const def = getItemDef(foundItem.itemId);
+		const res = addToInventory(
+			foundPlayer.inventory,
+			{
+				kind: "stack",
+				itemId: foundItem.itemId,
+				quantity: foundItem.quantity,
+			},
+			def.stackSize,
+		);
 
-	if (res.remaining > 0) {
-		foundItem.quantity = res.remaining;
-	} else {
+		if (res.remaining > 0) {
+			foundItem.quantity = res.remaining;
+		} else {
+			serverGameState.groundItems.delete(groundItemId);
+		}
+		return;
+	}
+
+	// kind === "equip"
+	const res = addToInventory(foundPlayer.inventory, {
+		kind: "equip",
+		itemId: foundItem.itemId,
+		instanceId: foundItem.instanceId,
+		meta: foundItem.meta,
+	});
+
+	if (res.remaining === 0) {
 		serverGameState.groundItems.delete(groundItemId);
 	}
 }

@@ -7,12 +7,17 @@
 import type { ItemId } from "../items/itemTypes.js";
 import type { GameStateSnapshot, StatKey } from "./gamestate.js";
 
-export type SlotContainer = "inventory" | "bank";
+export type SlotContainer = "inventory" | "bank" | "equipment";
 
-export type SlotRef = {
-	from: SlotContainer;
-	slotIndex: number;
-};
+export type SlotRef =
+	| {
+			from: "inventory" | "bank";
+			slotIndex: number;
+	  }
+	| {
+			from: "equipment";
+			slotKey: "weapon" | "charm";
+	  };
 
 export type ClientToServerMessage =
 	| { type: "chat"; text: string }

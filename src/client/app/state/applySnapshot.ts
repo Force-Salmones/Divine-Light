@@ -14,6 +14,7 @@ import { isWithinAttackRange } from "../game/range.js";
 import { isOptionsPanelVisible } from "../ui/optionsPanel.js";
 import { isStatsPanelVisible } from "../ui/statsPanel.js";
 import { isInventoryPanelVisible } from "../ui/inventoryPanel.js";
+import { isEquipmentPanelVisible } from "../ui/equipmentPanel.js";
 
 /**
  * Apply a new snapshot from the server.
@@ -172,6 +173,9 @@ export async function applySnapshot(
 	}
 	if (isInventoryPanelVisible(app.ui.inventory)) {
 		app.ui.inventory.update(snapshot);
+	}
+	if (isEquipmentPanelVisible(app.ui.equipment)) {
+		app.ui.equipment.update(snapshot);
 	}
 	app.ui.bank.sync(snapshot);
 }

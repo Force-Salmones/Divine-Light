@@ -25,4 +25,14 @@ export type ItemEtcDef = ItemBaseDef & {
 	typeProps: Record<string, never>;
 };
 
-export type ItemDef = ItemUseDef | ItemEtcDef;
+type EquipSubType = "weapon" | "charm";
+
+export type ItemEquipDef = ItemBaseDef & {
+	type: "equip";
+	stackSize: 1;
+	typeProps: {
+		subType: EquipSubType;
+	};
+};
+
+export type ItemDef = ItemUseDef | ItemEtcDef | ItemEquipDef;

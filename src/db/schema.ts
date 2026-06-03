@@ -6,7 +6,6 @@ import {
 	varchar,
 	integer,
 	jsonb,
-	boolean,
 	bigint,
 } from "drizzle-orm/pg-core";
 
@@ -166,6 +165,14 @@ export const users = pgTable("users", {
 					null,
 					null,
 				],
+			}),
+		),
+	equipment: jsonb("equipment")
+		.notNull()
+		.default(
+			JSON.stringify({
+				charm: null,
+				weapon: null,
 			}),
 		),
 	gold: bigint("gold", { mode: "number" }).notNull().default(0),
