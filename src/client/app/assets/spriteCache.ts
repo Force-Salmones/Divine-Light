@@ -53,6 +53,23 @@ export async function refreshSpritesIfNeeded(
 		spriteUrls.add(`/assets/items/${gi.itemId}.png`);
 	}
 
+	for (const e of snapshot.player.activeEffects) {
+		spriteUrls.add(`/assets/effectIcons/${e.id}.png`);
+	}
+
+	for (const p in snapshot.players) {
+		if (!snapshot.players[p]) continue;
+		for (const e of snapshot.players[p].activeEffects) {
+			spriteUrls.add(`/assets/effectIcons/${e.id}.png`);
+		}
+	}
+
+	for (const enemy of snapshot.enemies) {
+		for (const e of enemy.activeEffects) {
+			spriteUrls.add(`/assets/effectIcons/${e.id}.png`);
+		}
+	}
+
 	const missing = Array.from(spriteUrls).filter(
 		(url) => !cache.images.has(url),
 	);

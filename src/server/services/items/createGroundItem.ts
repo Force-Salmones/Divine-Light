@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { serverGameState } from "@/server/state/gameState";
 import { randomInt } from "node:crypto";
 import type { SlotItem } from "@/shared/items/itemInstance";
+import { getItemDef } from "./itemRegistry";
 
 export function createGroundItem(
 	item: SlotItem,
@@ -23,12 +24,24 @@ export function createGroundItem(
 		return;
 	}
 
+	const def = getItemDef(item.itemId);
+	const meta: Record<string, unknown> = { ...(item.meta ?? {}) };
+
+	if (def.type === "equip") {
+		const statMods = meta.statMods;
+		if (!statMods || typeof statMods !== "object") {
+			meta.statMods = def.typeProps.statMods ?? {};
+		}
+		if (typeof meta.requiredLevel !== "number") {
+			meta.requiredLevel = def.typeProps.requiredLevel ?? 1;
+		}
+	}
 	serverGameState.groundItems.set(id, {
 		...base,
 		kind: "equip",
 		itemId: item.itemId,
 		instanceId: item.instanceId,
-		meta: item.meta,
+		meta,
 	});
 }
 

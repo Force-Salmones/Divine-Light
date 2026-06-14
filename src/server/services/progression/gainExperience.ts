@@ -21,9 +21,6 @@ export function gainExperience(player: Player, amount: number): void {
 			timestamp: Date.now(),
 		};
 
-		console.log(
-			`Player leveled up to ${player.level}! Unallocated points: ${player.unallocatedPoints}`,
-		);
 		sendChatToPlayer(
 			player.id,
 			`Congratulations! You've reached level ${player.level}! You have ${player.unallocatedPoints} unallocated stat points.`,

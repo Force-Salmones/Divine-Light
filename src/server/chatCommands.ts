@@ -5,6 +5,7 @@ import { createMob, removeMob } from "../db/queries/mobs";
 import { loadEnemy } from "./services/loadEnemy";
 import { addToInventory } from "./services/items/addToInventory";
 import { getItemDef } from "./services/items/itemRegistry";
+import { recomputePlayerStats } from "./services/modifiers/recomputePlayerStats";
 
 export type ChatCommandContext = {
 	playerId: string;
@@ -152,5 +153,34 @@ export const adminChatCommands: Record<string, ChatCommandHandler> = {
 		const stackSize = getItemDef(itemId).stackSize;
 
 		addToInventory(foundPlayer.inventory, itemId, quantity, stackSize);
+	},
+	addEffect: async ({ args, reply }) => {
+		if (args.length < 2) {
+			void reply("Usage: $addeffect <name> <effectId> ");
+			return;
+		}
+		const playerName = args[0];
+		let foundPlayer: Player | null = null;
+		for (const player in serverGameState.players) {
+			if (!serverGameState.players[player]) continue;
+			if (serverGameState.players[player].name === playerName) {
+				foundPlayer = serverGameState.players[player];
+			}
+		}
+		if (!foundPlayer) {
+			void reply(`Player "${playerName}" not found`);
+			return;
+		}
+		foundPlayer.activeEffects = [];
+		foundPlayer.activeEffects.push({
+			id: "rage",
+			source: "skillEffect",
+			startedAtMs: Date.now(),
+			expiresAtMs: Date.now() + 60_000,
+			primaryMods: { STR: 20 },
+			derivedMods: {},
+		});
+
+		recomputePlayerStats(foundPlayer);
 	},
 };

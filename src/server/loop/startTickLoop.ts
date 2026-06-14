@@ -4,6 +4,7 @@ import { broadcastGameState } from "../ws/broadcastGameState";
 import { updateAutomaticAttack } from "./updateAutomaticAttack";
 import { updateServerMovement } from "./updateServerMovement";
 import { pruneExpiredItems } from "./pruneExpiredItems";
+import { updateEffectsAndStats } from "./updateEffectsAndStats";
 
 export function startTickLoop() {
 	let tickCounter = 0;
@@ -14,6 +15,9 @@ export function startTickLoop() {
 		const now = Date.now();
 		const deltaSeconds = (now - runtimeState.lastTick) / 1000;
 		runtimeState.lastTick = now;
+
+		updateEffectsAndStats(now);
+
 		updateServerMovement(deltaSeconds);
 		updateAutomaticAttack();
 

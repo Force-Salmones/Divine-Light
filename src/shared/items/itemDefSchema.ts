@@ -26,6 +26,8 @@ const ItemEquipDefSchema = ItemBaseDefSchema.extend({
 	type: z.literal("equip"),
 	typeProps: z.object({
 		subType: z.enum(["weapon", "charm"]),
+		statMods: z.record(z.string(), z.number()).optional(),
+		requiredLevel: z.number().int().min(1).optional(),
 	}),
 });
 

@@ -1,8 +1,14 @@
 import type { Bank, Equipment, Inventory } from "../items/inventory.js";
 import type { ItemId } from "../items/itemTypes.js";
+import type {
+	ActiveEffect,
+	BaseStats,
+	ModifierBreakdown,
+	BaseTertiaryStats,
+} from "./modifiers.js";
 
 export type StatKey = "STR" | "VIT" | "DEX" | "LUK" | "INT" | "WIS";
-export const statKeys = ["STR", "VIT", "DEX", "LUK", "INT", "WIS"];
+export const statKeys = ["STR", "VIT", "DEX", "LUK", "INT", "WIS"] as const;
 
 export type AttackEvent = {
 	playerId: string;
@@ -38,6 +44,7 @@ export type PlayerPublic = {
 	currMana: number;
 	maxMana: number;
 	size: number;
+	activeEffects: ActiveEffect[];
 };
 
 export type PlayerPrivate = {
@@ -54,8 +61,15 @@ export type PlayerPrivate = {
 	defense: number;
 	resistance: number;
 	speed: number;
-	attackRange: number;
 	attackSpeed: number;
+	attackRange: number;
+	critChance: number;
+	critDamage: number;
+	goldPlus: number;
+	experiencePlus: number;
+	baseStats: BaseStats;
+	baseTertiaryStats: BaseTertiaryStats;
+	modBreakdown: ModifierBreakdown;
 	lastAttackTime: number;
 	targetX?: number;
 	targetY?: number;
@@ -79,6 +93,7 @@ export type EnemyPublic = {
 	y: number;
 	sprite: string;
 	size: number;
+	activeEffects: ActiveEffect[];
 };
 
 export type GroundItemBase = {

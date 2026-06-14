@@ -1,0 +1,166 @@
+{
+	"weapon": {
+		"STR": {
+			"base": 5,
+			"perLevel": 0.5,
+			"chance": "high"
+		},
+		"VIT": {
+			"base": 5,
+			"perLevel": 0.5,
+			"chance": "high"
+		},
+		"DEX": {
+			"base": 5,
+			"perLevel": 0.5,
+			"chance": "high"
+		},
+		"LUK": {
+			"base": 5,
+			"perLevel": 0.5,
+			"chance": "high"
+		},
+		"INT": {
+			"base": 5,
+			"perLevel": 0.5,
+			"chance": "high"
+		},
+		"WIS": {
+			"base": 5,
+			"perLevel": 0.5,
+			"chance": "high"
+		},
+		"maxHealth": {
+			"base": 100,
+			"perLevel": 30,
+			"chance": "medium"
+		},
+		"maxMana": {
+			"base": 100,
+			"perLevel": 30,
+			"chance": "medium"
+		},
+		"defense": {
+			"base": 5,
+			"perLevel": 3,
+			"chance": "medium"
+		},
+		"resistance": {
+			"base": 5,
+			"perLevel": 3,
+			"chance": "medium"
+		},
+		"minDamage": {
+			"base": 10,
+			"perLevel": 10,
+			"chance": "medium"
+		},
+		"maxDamage": {
+			"base": 10,
+			"perLevel": 10,
+			"chance": "medium"
+		},
+		"attackSpeed": {
+			"base": -0.03,
+			"perLevel": -0.002,
+			"chance": "low"
+		},
+		"speed": {
+			"base": 5,
+			"perLevel": 0.25,
+			"chance": "low"
+		},
+		"goldPlus": {
+			"base": 5,
+			"perLevel": 0.25,
+			"chance": "verylow"
+		},
+		"experiencePlus": {
+			"base": 5,
+			"perLevel": 0.1,
+			"chance": "verylow"
+		}
+	},
+	"charm": {
+		"STR": {
+			"base": 5,
+			"perLevel": 0.5,
+			"chance": "medium"
+		},
+		"VIT": {
+			"base": 5,
+			"perLevel": 0.5,
+			"chance": "medium"
+		},
+		"DEX": {
+			"base": 5,
+			"perLevel": 0.5,
+			"chance": "medium"
+		},
+		"LUK": {
+			"base": 5,
+			"perLevel": 0.5,
+			"chance": "medium"
+		},
+		"INT": {
+			"base": 5,
+			"perLevel": 0.5,
+			"chance": "medium"
+		},
+		"WIS": {
+			"base": 5,
+			"perLevel": 0.5,
+			"chance": "medium"
+		},
+		"maxHealth": {
+			"base": 100,
+			"perLevel": 30,
+			"chance": "high"
+		},
+		"maxMana": {
+			"base": 100,
+			"perLevel": 30,
+			"chance": "high"
+		},
+		"defense": {
+			"base": 5,
+			"perLevel": 3,
+			"chance": "low"
+		},
+		"resistance": {
+			"base": 5,
+			"perLevel": 3,
+			"chance": "low"
+		},
+		"minDamage": {
+			"base": 10,
+			"perLevel": 10,
+			"chance": "low"
+		},
+		"maxDamage": {
+			"base": 10,
+			"perLevel": 10,
+			"chance": "low"
+		},
+		"attackSpeed": {
+			"base": -0.03,
+			"perLevel": -0.002,
+			"chance": "verylow"
+		},
+		"speed": {
+			"base": 5,
+			"perLevel": 0.25,
+			"chance": "low"
+		},
+		"goldPlus": {
+			"base": 5,
+			"perLevel": 0.25,
+			"chance": "low"
+		},
+		"experiencePlus": {
+			"base": 5,
+			"perLevel": 0.1,
+			"chance": "low"
+		}
+	}
+}

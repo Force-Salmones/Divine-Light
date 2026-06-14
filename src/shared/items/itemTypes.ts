@@ -1,3 +1,5 @@
+import type { EquipmentSlotKey } from "./inventory";
+
 export type ItemId = number;
 
 export type ItemType = "etc" | "use" | "equip";
@@ -25,13 +27,13 @@ export type ItemEtcDef = ItemBaseDef & {
 	typeProps: Record<string, never>;
 };
 
-type EquipSubType = "weapon" | "charm";
-
 export type ItemEquipDef = ItemBaseDef & {
 	type: "equip";
 	stackSize: 1;
 	typeProps: {
-		subType: EquipSubType;
+		subType: EquipmentSlotKey;
+		statMods?: Record<string, number>;
+		requiredLevel?: number;
 	};
 };
 

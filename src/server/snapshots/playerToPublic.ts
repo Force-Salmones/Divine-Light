@@ -14,5 +14,6 @@ export function playerToPublic(player: Player): PlayerPublic {
 		currMana: player.currMana,
 		maxMana: player.maxMana,
 		size: player.size,
+		activeEffects: player.activeEffects ?? [],
 	};
 }

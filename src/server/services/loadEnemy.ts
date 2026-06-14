@@ -38,6 +38,8 @@ export async function loadEnemy(mob: Mob): Promise<Enemy> {
 		lastAttackTime: 0,
 		sprite: `/assets/mobs/${mob.mobId}.png`,
 		size: mobData.size,
+		activeEffects: [],
+		cooldowns: {},
 	};
 	return enemy;
 }

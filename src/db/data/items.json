@@ -24,7 +24,12 @@
 		"stackSize": 1,
 		"flavor": "Better than your hands at least",
 		"typeProps": {
-			"subType": "weapon"
+			"subType": "weapon",
+			"statMods": {
+				"STR": 100,
+				"attackSpeed": 1
+			},
+			"requiredLevel": 1
 		}
 	},
 	"3": {
@@ -34,7 +39,11 @@
 		"stackSize": 1,
 		"flavor": "Somehow, it feels judgemental",
 		"typeProps": {
-			"subType": "charm"
+			"subType": "charm",
+			"statMods": {
+				"STR": 20
+			},
+			"requiredLevel": 5
 		}
 	}
 }

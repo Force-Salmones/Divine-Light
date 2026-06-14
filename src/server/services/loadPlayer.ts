@@ -5,6 +5,7 @@ import { expToLevelUp } from "./progression/gainExperience";
 import { validateInventory } from "./items/validateInventory";
 import { validateBank } from "./items/validateBank";
 import { validateEquipment } from "./items/validateEquipment";
+import { recomputePlayerStats } from "./modifiers/recomputePlayerStats";
 
 export async function loadPlayer(
 	playerId: string,
@@ -13,6 +14,26 @@ export async function loadPlayer(
 	if (!dbUser) {
 		throw new Error("Player not found");
 	}
+
+	const baseStats = {
+		STR: dbUser.baseSTR,
+		VIT: dbUser.baseVIT,
+		DEX: dbUser.baseDEX,
+		LUK: dbUser.baseLUK,
+		INT: dbUser.baseINT,
+		WIS: dbUser.baseWIS,
+	};
+
+	const baseTertiaryStats = {
+		speed: 100,
+		attackRange: 50,
+		attackSpeed: 1,
+		critChance: 0,
+		critDamage: 50,
+		goldPlus: 0,
+		experiencePlus: 0,
+	};
+
 	const player: Player = {
 		id: dbUser.id,
 		name: dbUser.name,
@@ -33,19 +54,36 @@ export async function loadPlayer(
 		currMana: calcMana(dbUser),
 		defense: Math.max(calcDefense(dbUser), 0),
 		resistance: Math.max(calcResistance(dbUser), 0),
+		speed: baseTertiaryStats.speed,
+		attackSpeed: baseTertiaryStats.attackSpeed,
+		attackRange: baseTertiaryStats.attackRange,
+		critChance: baseTertiaryStats.critChance,
+		critDamage: baseTertiaryStats.critDamage,
+		goldPlus: baseTertiaryStats.goldPlus,
+		experiencePlus: baseTertiaryStats.experiencePlus,
+		baseStats: baseStats,
+		baseTertiaryStats: baseTertiaryStats,
 		x: dbUser.posX,
 		y: dbUser.posY,
 		sprite: "/assets/player-temp.png",
-		speed: 100,
-		attackRange: 50,
-		attackSpeed: 1,
 		lastAttackTime: 0,
 		inventory: await validateInventory(dbUser.inventory, dbUser.id),
 		bank: await validateBank(dbUser.bank, dbUser.id),
 		bankOpen: false,
 		equipment: await validateEquipment(dbUser.equipment),
 		size: 32,
+		activeEffects: [],
+		modBreakdown: {
+			equipmentPrimary: {},
+			equipmentDerived: {},
+			skillPrimary: {},
+			skillDerived: {},
+			usePrimary: {},
+			useDerived: {},
+		},
+		cooldowns: {},
 	};
+	recomputePlayerStats(player);
 	return player;
 }
 export function calcHealth(user: User): number {

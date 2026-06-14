@@ -10,11 +10,7 @@ import {
 	drawOutline,
 } from "./primitives.js";
 import { renderFloatingTexts } from "../effects/floatingText.js";
-import {
-	drawPlayerInfoPanel,
-	drawSelectedEnemyPanel,
-	drawSelectedPlayerPanel,
-} from "./uiPanels.js";
+import { drawPlayerInfoPanel, drawSelectedEntityPanel } from "./uiPanels.js";
 import {
 	isWithinAttackRange,
 	isWithinPlayerAttackRange,
@@ -87,7 +83,7 @@ export function renderFrame(app: AppContext) {
 		const img = app.sprites.images.get(sprite);
 		if (img) ctx.drawImage(img, gi.x, gi.y, ITEM_SIZE, ITEM_SIZE);
 		else {
-			ctx.fillStyle = "rgba(255,255,0,0,0.8";
+			ctx.fillStyle = "rgba(255,255,0,0,0.8)";
 			ctx.fillRect(gi.x, gi.y, ITEM_SIZE, ITEM_SIZE);
 		}
 	}
@@ -98,7 +94,7 @@ export function renderFrame(app: AppContext) {
 		const img = app.sprites.images.get(sprite);
 		if (img) ctx.drawImage(img, npc.x, npc.y, npc.size, npc.size);
 		else {
-			ctx.fillStyle = "rgba(0,255,255,0,0.8";
+			ctx.fillStyle = "rgba(0,255,255,0,0.8)";
 			ctx.fillRect(npc.x, npc.y, npc.size, npc.size);
 		}
 	}
@@ -177,10 +173,11 @@ export function renderFrame(app: AppContext) {
 		const enemy = snapshot.enemies.find((e) => e.id === sel.id);
 		if (enemy) {
 			const inRange = isWithinAttackRange(snapshot.player, enemy);
-			drawSelectedEnemyPanel(
+			drawSelectedEntityPanel(
 				ctx,
 				viewport,
 				enemy,
+				"enemy",
 				app.sprites,
 				inRange ? "In range" : "Out of range",
 			);
@@ -189,17 +186,18 @@ export function renderFrame(app: AppContext) {
 		const player = snapshot.players[sel.id];
 		if (player && player.id !== snapshot.selfId) {
 			const inRange = isWithinPlayerAttackRange(snapshot.player, player);
-			drawSelectedPlayerPanel(
+			drawSelectedEntityPanel(
 				ctx,
 				viewport,
 				player,
+				"player",
 				app.sprites,
 				inRange ? "In range" : "Out of range",
 			);
 		}
 	}
 
-	drawPlayerInfoPanel(ctx, viewport, snapshot.player);
+	drawPlayerInfoPanel(ctx, viewport, snapshot.player, app.sprites);
 
 	// FPS counter
 	if (app.store.showFpsCounter) {

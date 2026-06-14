@@ -9,6 +9,7 @@ export type Bank = {
 };
 
 export type EquipmentSlotKey = "weapon" | "charm";
+export const equipmentSlotKeys = ["weapon", "charm"] as const;
 
 export type Equipment = {
 	weapon: Slot | null;

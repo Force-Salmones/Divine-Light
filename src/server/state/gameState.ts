@@ -25,7 +25,10 @@ export type EntityRef = {
 	id: number;
 };
 
-export type Player = PlayerPublic & PlayerPrivate;
+export type Player = PlayerPublic &
+	PlayerPrivate & {
+		cooldowns: Record<string, number>;
+	};
 
 export type EnemyPrivate = {
 	experience: number;
@@ -50,7 +53,10 @@ export type EnemyPrivate = {
 	lastAttackTime: number;
 };
 
-export type Enemy = EnemyPublic & EnemyPrivate;
+export type Enemy = EnemyPublic &
+	EnemyPrivate & {
+		cooldowns: Record<string, number>;
+	};
 
 export const serverGameState: ServerGameState = {
 	players: {},

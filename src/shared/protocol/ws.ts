@@ -35,12 +35,13 @@ export type ClientToServerMessage =
 	| {
 			type: "activate";
 			source: ActivateSource;
-			// target?:
+			target?: ActivateTarget;
 	  };
 
 export type ActivateTarget =
 	| { kind: "self" }
-	| { kind: "entity"; entityId: string }
+	| { kind: "player"; playerId: string }
+	| { kind: "enemy"; enemyId: number }
 	| { kind: "position"; x: number; y: number };
 
 export type ActivateSource =
