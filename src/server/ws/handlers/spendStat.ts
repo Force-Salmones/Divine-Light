@@ -2,8 +2,8 @@ import type { WsHandlerContext } from "./types";
 import type { StatKey } from "@/shared/protocol/gamestate";
 import { statKeys } from "@/shared/protocol/gamestate";
 import { sendChatToPlayer } from "@/server/chatService";
-import { recalcPlayerDerivedStats } from "@/server/services/progression/recalcPlayerStats";
 import { getPlayerFromId } from "@/server/util/getPlayerFromId";
+import { recomputePlayerStats } from "@/server/services/modifiers/recomputePlayerStats";
 
 export function handleSpendStat(ctx: WsHandlerContext, msg: any) {
 	const pid = ctx.playerId;
@@ -21,9 +21,10 @@ export function handleSpendStat(ctx: WsHandlerContext, msg: any) {
 		sendChatToPlayer(pid, "No unallocated stat points available.", true);
 		return;
 	}
-	(player as any)[upper] = ((player as any)[upper] ?? 0) + 1;
+	(player as any).baseStats[upper] =
+		((player as any).baseStats[upper] ?? 0) + 1;
 	player.unallocatedPoints -= 1;
 
 	// Recalculate derived stats (HP, MP, defense, resistance)
-	recalcPlayerDerivedStats(player);
+	recomputePlayerStats(player);
 }

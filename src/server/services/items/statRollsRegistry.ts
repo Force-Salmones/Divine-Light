@@ -1,6 +1,7 @@
-import z from "zod";
+import { z } from "zod";
 import { readFile } from "node:fs/promises";
 import type { EquipmentSlotKey } from "@/shared/items/inventory";
+import type { StatId } from "@/shared/protocol/modifiers";
 
 const ChanceSchema = z.enum(["high", "medium", "low", "verylow"]);
 
@@ -17,7 +18,7 @@ const StatRollsFileSchema = z.object({
 
 export type StatRollChance = z.infer<typeof ChanceSchema>;
 export type StatRollDef = z.infer<typeof StatRollDefSchema>;
-export type StatRollTable = Record<string, StatRollDef>;
+export type StatRollTable = Partial<Record<StatId, StatRollDef>>;
 export type StatRollsFile = z.infer<typeof StatRollsFileSchema>;
 
 let statRolls: StatRollsFile | null = null;
@@ -30,7 +31,7 @@ export async function loadStatRollsRegistry(): Promise<void> {
 		"utf-8",
 	);
 
-	statRolls = StatRollsFileSchema.parse(JSON.parse(raw));
+	statRolls = StatRollsFileSchema.parse(JSON.parse(raw)) as StatRollsFile;
 }
 
 export function getStatRollsForSubType(

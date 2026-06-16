@@ -21,9 +21,7 @@ export type StatId =
 	| "minDamage"
 	| "maxDamage"
 	// Enemy final damage
-	| "damage"
-	// Allow future stats
-	| (string & {});
+	| "damage";
 
 export type StatBlock = Partial<Record<StatId, number>>;
 

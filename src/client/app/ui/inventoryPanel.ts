@@ -212,7 +212,9 @@ export function createInventoryPanelUI(opts: {
 				badge.textContent = "";
 			}
 
-			slot.title = `Item ${item.itemId}`;
+			if (item.kind === "equip") {
+				slot.title = JSON.stringify(item.meta.statMods);
+			}
 		}
 	}
 

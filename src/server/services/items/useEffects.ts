@@ -7,6 +7,7 @@ export function applyUseEffect(effectId: string, player: Player) {
 				player.maxHealth,
 				player.currHealth + 100,
 			);
+			console.log(player.maxHealth, player.currHealth);
 			return;
 		}
 		default: {

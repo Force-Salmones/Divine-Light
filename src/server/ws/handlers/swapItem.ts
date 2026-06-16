@@ -2,6 +2,7 @@ import { getPlayerFromId } from "@/server/util/getPlayerFromId";
 import { validateSlotRef } from "@/shared/protocol/helpers/validateSlotRef";
 import type { WsHandlerContext } from "./types";
 import { getItemDef } from "@/server/services/items/itemRegistry";
+import { recomputePlayerStats } from "@/server/services/modifiers/recomputePlayerStats";
 
 export function handleSwapItem(ctx: WsHandlerContext, msg: any) {
 	const player = getPlayerFromId(ctx.playerId);
@@ -20,6 +21,7 @@ export function handleSwapItem(ctx: WsHandlerContext, msg: any) {
 
 	setSlot(player, b, slotA);
 	setSlot(player, a, slotB);
+	recomputePlayerStats(player);
 }
 
 function getSlot(player: any, ref: any) {

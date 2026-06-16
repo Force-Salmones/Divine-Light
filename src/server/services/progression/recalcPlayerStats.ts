@@ -22,22 +22,9 @@ export function recalcPlayerDerivedStats(player: Player): void {
 		player.LUK,
 	);
 
-	// Preserve current health/mana proportionally, clamped to new max
-	const healthRatio =
-		player.maxHealth > 0 ? player.currHealth / player.maxHealth : 1;
-	const manaRatio = player.maxMana > 0 ? player.currMana / player.maxMana : 1;
-
 	player.maxHealth = maxHealth;
-	player.currHealth = Math.min(
-		maxHealth,
-		Math.max(0, Math.round(maxHealth * healthRatio)),
-	);
 
 	player.maxMana = maxMana;
-	player.currMana = Math.min(
-		maxMana,
-		Math.max(0, Math.round(maxMana * manaRatio)),
-	);
 
 	player.defense = Math.max(defense, 0);
 	player.resistance = Math.max(resistance, 0);

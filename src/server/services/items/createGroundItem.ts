@@ -3,6 +3,8 @@ import { serverGameState } from "@/server/state/gameState";
 import { randomInt } from "node:crypto";
 import type { SlotItem } from "@/shared/items/itemInstance";
 import { getItemDef } from "./itemRegistry";
+import { generateEquipStatMods } from "./generateEquipStats";
+import type { StatBlock } from "@/shared/protocol/modifiers";
 
 export function createGroundItem(
 	item: SlotItem,
@@ -32,8 +34,19 @@ export function createGroundItem(
 		if (!statMods || typeof statMods !== "object") {
 			meta.statMods = def.typeProps.statMods ?? {};
 		}
-		if (typeof meta.requiredLevel !== "number") {
-			meta.requiredLevel = def.typeProps.requiredLevel ?? 1;
+		const lvl =
+			typeof meta.requiredLevel === "number"
+				? meta.requiredLevel
+				: (def.typeProps.requiredLevel ?? 1);
+		meta.requiredLevel = lvl;
+		if (meta.statsRolled !== true) {
+			meta.statMods = generateEquipStatMods(
+				def.typeProps.subType,
+				lvl,
+				meta.statMods as StatBlock,
+			);
+			meta.statsRolled = true;
+			if (!meta.displayName) meta.displayName = def.name;
 		}
 	}
 	serverGameState.groundItems.set(id, {
