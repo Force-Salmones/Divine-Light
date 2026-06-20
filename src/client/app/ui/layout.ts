@@ -7,15 +7,12 @@ import { getWorldViewportRectCss } from "../render/viewport.js";
 
 export type OverlayHandles = {
 	chatContainer?: HTMLDivElement;
-	statsButton?: HTMLButtonElement;
 	statsContainer?: HTMLDivElement;
-	optionsButton?: HTMLButtonElement;
 	optionsContainer?: HTMLDivElement;
-	inventoryButton?: HTMLButtonElement;
 	inventoryContainer?: HTMLDivElement;
 	bankContainer?: HTMLDivElement;
-	equipmentButton?: HTMLButtonElement;
 	equipmentContainer?: HTMLDivElement;
+	uiButtonsContainer?: HTMLDivElement;
 };
 
 /**
@@ -45,24 +42,8 @@ export function layoutOverlayElements(
 		playerPanelMargin +
 		buttonGapFromPlayerPanel;
 
-	const statsBtnHeight = handles.statsButton?.offsetHeight ?? 24;
 	const panelGapFromButtons = 10;
-	const panelBottom = buttonBottom + statsBtnHeight + panelGapFromButtons;
-
-	if (handles.statsButton) {
-		handles.statsButton.style.right = `${outsideRight + 20}px`;
-		handles.statsButton.style.bottom = `${buttonBottom}px`;
-	}
-
-	if (handles.optionsButton) {
-		handles.optionsButton.style.right = `${outsideRight + 110}px`;
-		handles.optionsButton.style.bottom = `${buttonBottom}px`;
-	}
-
-	if (handles.inventoryButton) {
-		handles.inventoryButton.style.right = `${outsideRight + 220}px`;
-		handles.inventoryButton.style.bottom = `${buttonBottom}px`;
-	}
+	const panelBottom = buttonBottom + panelGapFromButtons;
 
 	if (handles.statsContainer) {
 		handles.statsContainer.style.right = `${outsideRight + 20}px`;
@@ -88,8 +69,9 @@ export function layoutOverlayElements(
 		handles.equipmentContainer.style.right = `${outsideRight + 290}px`;
 		handles.equipmentContainer.style.bottom = `${panelBottom}px`;
 	}
-	if (handles.equipmentButton) {
-		handles.equipmentButton.style.right = `${outsideRight + 200}px`;
-		handles.equipmentButton.style.bottom = `${buttonBottom - 30}px`;
+
+	if (handles.uiButtonsContainer) {
+		handles.uiButtonsContainer.style.right = "0px";
+		handles.uiButtonsContainer.style.bottom = `${playerPanelHeight + 20 + 100}px`;
 	}
 }

@@ -25,9 +25,9 @@ export function createStatsPanelUI(
 ): StatsPanelUI {
 	const button = document.createElement("button");
 	button.textContent = "Stats";
-	button.style.position = "fixed";
-	button.style.right = "280px";
-	button.style.bottom = "20px";
+	button.style.position = "static";
+	button.style.right = "";
+	button.style.bottom = "";
 	button.style.padding = "4px 8px";
 	button.style.fontSize = "12px";
 	button.style.fontFamily = "sans-serif";

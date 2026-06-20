@@ -17,6 +17,8 @@ export async function persistPlayer(playerId: string) {
 			player.baseStats.LUK,
 			player.baseStats.INT,
 			player.baseStats.WIS,
+			player.currHealth,
+			player.currMana,
 			player.inventory,
 			player.bank,
 			player.equipment,

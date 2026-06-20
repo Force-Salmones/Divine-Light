@@ -23,9 +23,9 @@ export function createOptionsPanelUI(
 ): OptionsPanelUI {
 	const button = document.createElement("button");
 	button.textContent = "Options";
-	button.style.position = "fixed";
-	button.style.right = "360px";
-	button.style.bottom = "20px";
+	button.style.position = "static";
+	button.style.right = "";
+	button.style.bottom = "";
 	button.style.padding = "4px 8px";
 	button.style.fontSize = "12px";
 	button.style.fontFamily = "sans-serif";

@@ -28,6 +28,8 @@ export const users = pgTable("users", {
 	baseLUK: integer("base_luk").notNull().default(4),
 	baseINT: integer("base_int").notNull().default(4),
 	baseWIS: integer("base_wis").notNull().default(4),
+	currHealth: integer("current_health").notNull().default(1),
+	currMana: integer("current_mana").notNull().default(1),
 	inventory: jsonb("inventory")
 		.notNull()
 		.default(

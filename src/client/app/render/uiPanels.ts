@@ -134,7 +134,7 @@ export function drawPlayerInfoPanel(
 		4,
 	).height;
 
-	const drawerY = panelY - 6 - drawerHeight;
+	const drawerY = panelY - 16 - drawerHeight;
 
 	drawEffectDrawer(
 		ctx,

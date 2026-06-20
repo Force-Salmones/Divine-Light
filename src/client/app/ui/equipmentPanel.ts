@@ -14,9 +14,9 @@ export function createEquipmentPanelUI(opts: {
 }): EquipmentPanelUI {
 	const button = document.createElement("button");
 	button.textContent = "Equipment";
-	button.style.position = "fixed";
-	button.style.right = "320px";
-	button.style.bottom = "20px";
+	button.style.position = "static";
+	button.style.right = "";
+	button.style.bottom = "";
 	button.style.padding = "4px 8px";
 	button.style.fontSize = "12px";
 	button.style.fontFamily = "sans-serif";

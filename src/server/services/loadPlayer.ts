@@ -34,6 +34,9 @@ export async function loadPlayer(
 		experiencePlus: 0,
 	};
 
+	const maxHealth = calcHealth(dbUser);
+	const maxMana = calcMana(dbUser);
+
 	const player: Player = {
 		id: dbUser.id,
 		name: dbUser.name,
@@ -49,9 +52,9 @@ export async function loadPlayer(
 		WIS: dbUser.baseWIS,
 		unallocatedPoints: dbUser.unallocatedPoints,
 		maxHealth: calcHealth(dbUser),
-		currHealth: calcHealth(dbUser),
+		currHealth: Math.max(dbUser.currHealth, maxHealth),
 		maxMana: calcMana(dbUser),
-		currMana: calcMana(dbUser),
+		currMana: Math.max(dbUser.currMana, maxMana),
 		defense: Math.max(calcDefense(dbUser), 0),
 		resistance: Math.max(calcResistance(dbUser), 0),
 		speed: baseTertiaryStats.speed,
