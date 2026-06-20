@@ -12,6 +12,7 @@ export function createUiButtonsContainer(
 	container.style.position = "fixed";
 	container.style.display = "flex";
 	container.style.flexDirection = "column";
+	container.style.gap = "4px";
 
 	container.appendChild(inventoryButton);
 	container.appendChild(equipmentButton);

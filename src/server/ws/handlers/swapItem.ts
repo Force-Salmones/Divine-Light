@@ -3,6 +3,7 @@ import { validateSlotRef } from "@/shared/protocol/helpers/validateSlotRef";
 import type { WsHandlerContext } from "./types";
 import { getItemDef } from "@/server/services/items/itemRegistry";
 import { recomputePlayerStats } from "@/server/services/modifiers/recomputePlayerStats";
+import { isInBankRange } from "@/server/util/isInBankRange";
 
 export function handleSwapItem(ctx: WsHandlerContext, msg: any) {
 	const player = getPlayerFromId(ctx.playerId);
@@ -15,6 +16,13 @@ export function handleSwapItem(ctx: WsHandlerContext, msg: any) {
 
 	const slotA = getSlot(player, a);
 	const slotB = getSlot(player, b);
+
+	if (a.from === "bank" || b.from === "bank") {
+		if (!isInBankRange(player.x, player.y)) {
+			player.bankOpen = false;
+			return;
+		}
+	}
 
 	if (!canPlaceInto(player, b, slotA)) return;
 	if (!canPlaceInto(player, a, slotB)) return;
