@@ -213,7 +213,7 @@ export function createInventoryPanelUI(opts: {
 			}
 
 			if (item.kind === "equip") {
-				slot.title = JSON.stringify(item.meta.statMods);
+				slot.title = `${JSON.stringify(item.meta.statMods)} | Required Level: ${JSON.stringify(item.meta.requiredLevel)}`;
 			}
 		}
 	}

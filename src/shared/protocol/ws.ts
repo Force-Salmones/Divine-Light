@@ -4,6 +4,7 @@
  * IMPORTANT: This module must stay platform-agnostic (no imports from server/client code).
  */
 
+import type { EquipmentSlotKey } from "../items/inventory.js";
 import type { ItemId } from "../items/itemTypes.js";
 import type { GameStateSnapshot, StatKey } from "./gamestate.js";
 
@@ -16,7 +17,7 @@ export type SlotRef =
 	  }
 	| {
 			from: "equipment";
-			slotKey: "weapon" | "charm";
+			slotKey: EquipmentSlotKey;
 	  };
 
 export type ClientToServerMessage =

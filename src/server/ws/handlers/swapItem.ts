@@ -55,5 +55,7 @@ function canPlaceInto(player: any, destRef: any, item: any): boolean {
 	const def = getItemDef(item.itemId);
 	if (def.type !== "equip") return false;
 
+	if (def.typeProps.requiredLevel! > player.level) return false;
+
 	return def.typeProps.subType === destRef.slotKey;
 }
