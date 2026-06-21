@@ -5,7 +5,7 @@ import { createSlotEl } from "./createSlotEl.js";
 
 export type BankPanelUI = {
 	container: HTMLDivElement;
-	sync: (snapshot: GameStateSnapshot | null) => void;
+	update: (snapshot: GameStateSnapshot | null) => void;
 };
 
 export function createBankPanelUi(opts: {
@@ -152,7 +152,7 @@ export function createBankPanelUi(opts: {
 		grid.appendChild(slot);
 	}
 
-	function sync(snapshot: GameStateSnapshot | null) {
+	function update(snapshot: GameStateSnapshot | null) {
 		if (!snapshot) return;
 		const open = !!snapshot?.player?.bankOpen;
 		container.style.display = open ? "block" : "none";
@@ -200,5 +200,5 @@ export function createBankPanelUi(opts: {
 	}
 
 	document.body.appendChild(container);
-	return { container, sync };
+	return { container, update };
 }

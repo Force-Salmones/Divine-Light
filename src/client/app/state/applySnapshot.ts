@@ -177,5 +177,5 @@ export async function applySnapshot(
 	if (isEquipmentPanelVisible(app.ui.equipment)) {
 		app.ui.equipment.update(snapshot);
 	}
-	app.ui.bank.sync(snapshot);
+	app.ui.bank.update(snapshot);
 }

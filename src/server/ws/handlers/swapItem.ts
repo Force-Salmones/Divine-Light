@@ -4,6 +4,7 @@ import type { WsHandlerContext } from "./types";
 import { getItemDef } from "@/server/services/items/itemRegistry";
 import { recomputePlayerStats } from "@/server/services/modifiers/recomputePlayerStats";
 import { isInBankRange } from "@/server/util/isInBankRange";
+import { sendChatToPlayer } from "@/server/chatService";
 
 export function handleSwapItem(ctx: WsHandlerContext, msg: any) {
 	const player = getPlayerFromId(ctx.playerId);
@@ -55,7 +56,13 @@ function canPlaceInto(player: any, destRef: any, item: any): boolean {
 	const def = getItemDef(item.itemId);
 	if (def.type !== "equip") return false;
 
-	if (def.typeProps.requiredLevel! > player.level) return false;
+	if (def.typeProps.requiredLevel! > player.level) {
+		sendChatToPlayer(
+			player.id,
+			"You're not high enough level to equip that.",
+		);
+		return false;
+	}
 
 	return def.typeProps.subType === destRef.slotKey;
 }

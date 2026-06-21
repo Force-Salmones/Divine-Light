@@ -6,7 +6,6 @@ import { createSlotEl } from "./createSlotEl.js";
 export type InventoryPanelUI = {
 	button: HTMLButtonElement;
 	container: HTMLDivElement;
-	slotEls: HTMLDivElement[];
 	update: (snapshot: GameStateSnapshot | null) => void;
 };
 
@@ -218,7 +217,7 @@ export function createInventoryPanelUI(opts: {
 		}
 	}
 
-	return { button, container, slotEls, update };
+	return { button, container, update };
 }
 export function isInventoryPanelVisible(inv: InventoryPanelUI): boolean {
 	return inv.container.style.display !== "none";

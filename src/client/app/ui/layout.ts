@@ -13,6 +13,7 @@ export type OverlayHandles = {
 	bankContainer?: HTMLDivElement;
 	equipmentContainer?: HTMLDivElement;
 	uiButtonsContainer?: HTMLDivElement;
+	hotbarContainer?: HTMLDivElement;
 };
 
 /**
@@ -73,5 +74,25 @@ export function layoutOverlayElements(
 	if (handles.uiButtonsContainer) {
 		handles.uiButtonsContainer.style.right = "0px";
 		handles.uiButtonsContainer.style.bottom = `${playerPanelHeight + 20 + 100}px`;
+	}
+	if (handles.hotbarContainer) {
+		const chatWidth = 600;
+		const chatLeft = 10;
+		const playerPanelWidth = 260;
+		const margin = 10;
+
+		// Center between chat right edge and player panel left edge
+		const availableWidth =
+			viewport.canvasCssWidth -
+			chatLeft -
+			chatWidth -
+			playerPanelWidth -
+			margin * 3;
+		const hotbarWidth = 9 * 36 + 8 * 4 + 8; // 9 slots + 8 gaps + padding
+
+		const left =
+			chatLeft + chatWidth + margin + (availableWidth - hotbarWidth) / 2;
+
+		handles.hotbarContainer.style.left = `${left}px`;
 	}
 }

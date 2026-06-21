@@ -21,6 +21,7 @@ import { registerCanvasDropHandler } from "./input/canvasDropHandler.js";
 import { createBankPanelUi } from "./ui/bankPanel.js";
 import { createEquipmentPanelUI } from "./ui/equipmentPanel.js";
 import { createUiButtonsContainer } from "./ui/uiButtonsContainer.js";
+import { createHotbar } from "./ui/hotbar.js";
 
 export function startApp() {
 	const canvas = document.getElementById("game") as HTMLCanvasElement | null;
@@ -86,6 +87,8 @@ export function startApp() {
 		equipment.button,
 	);
 
+	const hotbar = createHotbar();
+
 	ws = createWsClient({
 		onOpen: () => {
 			console.log("Connected to game websocket");
@@ -134,7 +137,7 @@ export function startApp() {
 		sprites,
 		floatingText,
 		ws,
-		ui: { chat, stats, options, inventory, bank, equipment },
+		ui: { chat, stats, options, inventory, bank, equipment, hotbar },
 	};
 
 	function relayout() {
@@ -146,6 +149,7 @@ export function startApp() {
 			bankContainer: bank.container,
 			equipmentContainer: equipment.container,
 			uiButtonsContainer: buttonsContainer.container,
+			hotbarContainer: hotbar.container,
 		});
 	}
 

@@ -24,10 +24,13 @@ export function createSlotEl(slotIndex: number) {
 	badge.style.bottom = "2px";
 	badge.style.padding = "0 3px";
 	badge.style.fontSize = "10px";
+	badge.style.color = "white";
+	badge.style.fontFamily = "Brush Script MT";
+	badge.style.textAlign = "center";
 	badge.style.lineHeight = "12px";
-	badge.style.background = "rgba(0,0,0,0.7)";
+	badge.style.background = "rgba(0,0,0,0.5)";
 	badge.style.border = "1px solid rgba(255,255,255,0.35)";
-	badge.style.borderRadius = "2px";
+	badge.style.borderRadius = "3px";
 	badge.style.display = "none";
 	slot.appendChild(badge);
 
