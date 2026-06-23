@@ -24,6 +24,7 @@ import { createUiButtonsContainer } from "./ui/uiButtonsContainer.js";
 import { createHotbar } from "./ui/hotbar.js";
 import { createSkillPanelUI } from "./ui/skillPanel.js";
 import type { SkillId } from "../../shared/skills/skillTypes.js";
+import { registerHotbarKeyHandler } from "./input/hotbarKeyHandler.js";
 
 export function startApp() {
 	const canvas = document.getElementById("game") as HTMLCanvasElement | null;
@@ -159,6 +160,11 @@ export function startApp() {
 	hotbar.setSendBindHotbar((toIndex, source) =>
 		ws.send({ type: "bindHotbar", toIndex, source }),
 	);
+	hotbar.setSendClearHotbar((index) =>
+		ws.send({ type: "clearHotbar", index }),
+	);
+
+	const cleanupKeys = registerHotbarKeyHandler(app);
 
 	function relayout() {
 		layoutOverlayElements(viewport, {

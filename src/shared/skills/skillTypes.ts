@@ -14,6 +14,7 @@ export type SkillBaseDef = {
 	cooldown: number;
 	flavor: string;
 	maxLevel: number;
+	perLevel: Record<StatId, number>;
 };
 
 export type SkillAttackDef = {
@@ -27,5 +28,6 @@ export type SkillEffectDef = SkillBaseDef & {
 	duration: number;
 	target: EffectSkillTarget;
 	mods: Record<StatId, number>;
-	perLevel: Record<StatId, number>;
 };
+
+export type SkillDef = SkillAttackDef | SkillEffectDef;

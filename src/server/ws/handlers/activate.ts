@@ -10,17 +10,32 @@ import {
 } from "@/server/services/modifiers/recomputePlayerStats";
 import { getSkillDef } from "@/server/services/combat/skills/skillRegistry";
 import type { StatBlock, StatId } from "@/shared/protocol/modifiers";
-import { statKeys } from "@/shared/protocol/gamestate";
+import type { ActivateSource, ActivateTarget } from "@/shared/protocol/ws";
 
 const DEFAULT_SKILL_RANGE_PX = 100;
 
-export function handleActivate(ctx: WsHandlerContext, msg: any) {
+export function handleActivate(
+	ctx: WsHandlerContext,
+	msg: { source: ActivateSource; target?: ActivateTarget },
+) {
 	const player = getPlayerFromId(ctx.playerId);
 	if (!player) return;
 
-	const source = msg?.source;
+	let source = msg?.source;
 	if (!source || typeof source !== "object") return;
 
+	if (source.kind === "hotbar") {
+		const index = source.index;
+		if (index < 0 || index > 8) return;
+		const binding = player.hotbar.slots[index];
+		if (!binding) return;
+		if (binding.kind === "useItem" && binding.itemId !== undefined) {
+			msg.source = { kind: "itemId", itemId: binding.itemId };
+		} else if (binding.kind === "skill" && binding.skillId !== undefined) {
+			msg.source = { kind: "skillId", skillId: binding.skillId };
+		}
+	}
+	source = msg.source;
 	if (source.kind === "itemId") {
 		const itemId = source.itemId;
 
@@ -72,6 +87,7 @@ export function handleActivate(ctx: WsHandlerContext, msg: any) {
 		if (!def) return;
 		//only effects for now
 		if (def.type === "attack") return;
+
 		const skillName = def.name.toLowerCase();
 		const nowMs = Date.now();
 		const cooldownKey = `skill:${skillName}`;
@@ -106,7 +122,7 @@ export function handleActivate(ctx: WsHandlerContext, msg: any) {
 			(e) => !(e.source === "skillEffect" && e.id === skillName),
 		);
 		// use player skill level later
-		const skillLevel = 1;
+		const skillLevel = player.skillBook[skillId] ?? 1;
 
 		const statMods: StatBlock = {};
 		for (const [stat, value] of Object.entries(def.perLevel)) {

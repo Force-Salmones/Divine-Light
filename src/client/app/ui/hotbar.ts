@@ -8,6 +8,7 @@ export type Hotbar = {
 	setSendBindHotbar: (
 		fn: (toIndex: number, source: BindHotbarSource) => void,
 	) => void;
+	setSendClearHotbar: (fn: (index: number) => void) => void;
 };
 
 type BindHotbarSource =
@@ -21,6 +22,8 @@ export function createHotbar(): Hotbar {
 	let sendBindHotbar:
 		| ((toIndex: number, source: BindHotbarSource) => void)
 		| null = null;
+
+	let sendClearHotbar: ((index: number) => void) | null = null;
 
 	const container = document.createElement("div");
 	container.style.position = "fixed";
@@ -73,6 +76,11 @@ export function createHotbar(): Hotbar {
 				return;
 			}
 		});
+		slot.addEventListener("contextmenu", (e) => {
+			e.preventDefault();
+			if (!sendClearHotbar) return;
+			sendClearHotbar(i);
+		});
 
 		container.appendChild(slot);
 		slots.push({ slot, img, badge });
@@ -113,6 +121,8 @@ export function createHotbar(): Hotbar {
 	) {
 		sendBindHotbar = fn;
 	}
-
-	return { container, update, setSendBindHotbar };
+	function setSendClearHotbar(fn: (index: number) => void) {
+		sendClearHotbar = fn;
+	}
+	return { container, update, setSendBindHotbar, setSendClearHotbar };
 }

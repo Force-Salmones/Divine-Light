@@ -11,10 +11,11 @@ const SkillBaseDefSchema = z.object({
 	cooldown: z.number(),
 	flavor: z.string(),
 	maxLevel: z.number(),
+	perLevel: z.record(z.string(), z.number()),
 });
 
 const SkillAttackDefSchema = SkillBaseDefSchema.extend({
-	type: "attack",
+	type: z.literal("attack"),
 });
 
 const SkillEffectTargetTypeSchema = z.enum([
@@ -25,14 +26,13 @@ const SkillEffectTargetTypeSchema = z.enum([
 ]);
 
 const SkillEffectDefSchema = SkillBaseDefSchema.extend({
-	type: "effect",
+	type: z.literal("effect"),
 	duration: z.number(),
 	target: SkillEffectTargetTypeSchema,
 	mods: z.record(
 		z.string().refine((s): s is StatId => statIds.includes(s as StatId)),
 		z.number(),
 	),
-	perLevel: z.record(z.string(), z.number()),
 });
 
 export const SkillDefSchema = z.discriminatedUnion("type", [

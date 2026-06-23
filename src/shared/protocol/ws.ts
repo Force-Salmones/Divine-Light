@@ -58,7 +58,8 @@ export type ActivateTarget =
 export type ActivateSource =
 	| { kind: "itemId"; itemId: ItemId }
 	| { kind: "inventorySlot"; slot: SlotRef }
-	| { kind: "skillId"; skillId: string };
+	| { kind: "skillId"; skillId: SkillId }
+	| { kind: "hotbar"; index: number };
 
 export type ServerToClientMessage =
 	| { type: "gameState"; gameState: GameStateSnapshot }

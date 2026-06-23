@@ -19,6 +19,7 @@ import { loadMobRegistry } from "../services/mobs/mobsRegistry";
 import { getPlayerFromId } from "../util/getPlayerFromId";
 import { loadNpcRegistry } from "../services/npcs/npcRegistry";
 import { loadStatRollsRegistry } from "../services/items/statRollsRegistry";
+import { loadSkillRegistry } from "../services/combat/skills/skillRegistry";
 
 export let wss: WebSocketServer | null = null;
 export let httpServer: any = null;
@@ -31,6 +32,7 @@ export async function startServer() {
 	await loadItemRegistry();
 	await loadStatRollsRegistry();
 	await loadNpcRegistry();
+	await loadSkillRegistry();
 	await initializeEnemies();
 	startTickLoop();
 
