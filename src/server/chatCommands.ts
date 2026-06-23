@@ -6,6 +6,7 @@ import { loadEnemy } from "./services/loadEnemy";
 import { addToInventory } from "./services/items/addToInventory";
 import { getItemDef } from "./services/items/itemRegistry";
 import { recomputePlayerStats } from "./services/modifiers/recomputePlayerStats";
+import { learnSkill } from "./services/combat/skills/learnSkill";
 
 export type ChatCommandContext = {
 	playerId: string;
@@ -156,7 +157,7 @@ export const adminChatCommands: Record<string, ChatCommandHandler> = {
 	},
 	addEffect: async ({ args, reply }) => {
 		if (args.length < 2) {
-			void reply("Usage: $addeffect <name> <effectId> ");
+			void reply("Usage: $addEffect <name> <effectId> ");
 			return;
 		}
 		const playerName = args[0];
@@ -182,5 +183,31 @@ export const adminChatCommands: Record<string, ChatCommandHandler> = {
 		});
 
 		recomputePlayerStats(foundPlayer);
+	},
+	learnSkill: async ({ args, reply }) => {
+		if (args.length < 2) {
+			void reply("Usage: $learnSkill <name> <skillId> ");
+			return;
+		}
+		const playerName = args[0];
+		const skillId = Number(args[1]);
+
+		if (Number.isNaN(skillId)) {
+			void reply(`Invalid skillId: ${skillId}`);
+			return;
+		}
+
+		let foundPlayer: Player | null = null;
+		for (const player in serverGameState.players) {
+			if (!serverGameState.players[player]) continue;
+			if (serverGameState.players[player].name === playerName) {
+				foundPlayer = serverGameState.players[player];
+			}
+		}
+		if (!foundPlayer) {
+			void reply(`Player "${playerName}" not found`);
+			return;
+		}
+		learnSkill(foundPlayer, skillId);
 	},
 };
