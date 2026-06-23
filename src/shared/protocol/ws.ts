@@ -6,6 +6,7 @@
 
 import type { EquipmentSlotKey } from "../items/inventory.js";
 import type { ItemId } from "../items/itemTypes.js";
+import type { SkillId } from "../skills/skillTypes.js";
 import type { GameStateSnapshot, StatKey } from "./gamestate.js";
 
 export type SlotContainer = "inventory" | "bank" | "equipment";
@@ -28,6 +29,7 @@ export type ClientToServerMessage =
 	| { type: "stopAttack" }
 	| { type: "bonkPlayer"; targetPlayerId: string }
 	| { type: "spendStat"; stat: StatKey }
+	| { type: "levelUpSkill"; id: SkillId }
 	| { type: "pickupItem"; groundItemId?: string }
 	| { type: "dropItem"; slot: SlotRef }
 	| { type: "swapItem"; a: SlotRef; b: SlotRef }
@@ -37,7 +39,15 @@ export type ClientToServerMessage =
 			type: "activate";
 			source: ActivateSource;
 			target?: ActivateTarget;
-	  };
+	  }
+	| {
+			type: "bindHotbar";
+			toIndex: number;
+			source:
+				| { kind: "inventory"; slotIndex: number }
+				| { kind: "skillBook"; skillId: SkillId };
+	  }
+	| { type: "clearHotbar"; index: number };
 
 export type ActivateTarget =
 	| { kind: "self" }

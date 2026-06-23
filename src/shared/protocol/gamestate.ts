@@ -1,5 +1,7 @@
 import type { Bank, Equipment, Inventory } from "../items/inventory.js";
 import type { ItemId } from "../items/itemTypes.js";
+import type { Hotbar } from "../skills/hotbarSchema.js";
+import type { SkillId } from "../skills/skillTypes.js";
 import type {
 	ActiveEffect,
 	BaseStats,
@@ -76,6 +78,9 @@ export type PlayerPrivate = {
 	inventory: Inventory;
 	bank: Bank;
 	equipment: Equipment;
+	skillBook: Record<SkillId, number>;
+	skillPoints: number;
+	hotbar: Hotbar;
 	bankOpen: boolean;
 	lastAttackEvent?: AttackEvent;
 	lastIncomingHit?: IncomingHit;

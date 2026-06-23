@@ -7,7 +7,7 @@ import { equipmentSlotKeys } from "@/shared/items/inventory";
 const primaryKeys = statKeys;
 const primaryKeySet = new Set<string>(primaryKeys);
 
-function splitPhase(mods: StatBlock): {
+export function splitPhase(mods: StatBlock): {
 	primary: StatBlock;
 	derived: StatBlock;
 } {

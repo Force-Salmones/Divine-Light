@@ -2,6 +2,8 @@ import type { Bank, Equipment, Inventory } from "@/shared/items/inventory.js";
 import { db } from "../index.js";
 import { users, type User } from "../schema.js";
 import { eq } from "drizzle-orm";
+import type { SkillBook } from "@/server/services/combat/skills/validateSkillBook.js";
+import type { Hotbar } from "@/shared/skills/hotbarSchema.js";
 
 export async function createUser(
 	name: string,
@@ -61,6 +63,9 @@ export async function updateUser(
 	inventory: Inventory,
 	bank: Bank,
 	equipment: Equipment,
+	skillBook: SkillBook,
+	skillPoints: number,
+	hotbar: Hotbar,
 	gold: number,
 	posX: number,
 	posY: number,
@@ -81,6 +86,9 @@ export async function updateUser(
 			currMana: currMana,
 			inventory: inventory,
 			equipment: equipment,
+			skillBook: skillBook,
+			skillPoints: skillPoints,
+			hotbar: hotbar,
 			bank: bank,
 			gold: gold,
 			posX: posX,

@@ -6,6 +6,8 @@ import { validateInventory } from "./items/validateInventory";
 import { validateBank } from "./items/validateBank";
 import { validateEquipment } from "./items/validateEquipment";
 import { recomputePlayerStats } from "./modifiers/recomputePlayerStats";
+import { validateSkillBook } from "./combat/skills/validateSkillBook";
+import { validateHotbar } from "./combat/skills/validateHotbar";
 
 export async function loadPlayer(
 	playerId: string,
@@ -74,6 +76,9 @@ export async function loadPlayer(
 		bank: await validateBank(dbUser.bank, dbUser.id),
 		bankOpen: false,
 		equipment: await validateEquipment(dbUser.equipment),
+		skillBook: await validateSkillBook(dbUser.skillBook),
+		skillPoints: dbUser.skillPoints,
+		hotbar: await validateHotbar(dbUser.hotbar),
 		size: 32,
 		activeEffects: [],
 		modBreakdown: {

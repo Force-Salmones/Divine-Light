@@ -22,6 +22,8 @@ import { createBankPanelUi } from "./ui/bankPanel.js";
 import { createEquipmentPanelUI } from "./ui/equipmentPanel.js";
 import { createUiButtonsContainer } from "./ui/uiButtonsContainer.js";
 import { createHotbar } from "./ui/hotbar.js";
+import { createSkillPanelUI } from "./ui/skillPanel.js";
+import type { SkillId } from "../../shared/skills/skillTypes.js";
 
 export function startApp() {
 	const canvas = document.getElementById("game") as HTMLCanvasElement | null;
@@ -80,14 +82,19 @@ export function startApp() {
 		onSwapItem: (a, b) => ws.send({ type: "swapItem", a, b }),
 	});
 
+	const hotbar = createHotbar();
+
+	const skillBook = createSkillPanelUI({
+		onLevelUpSkill: (id: SkillId) => ws.send({ type: "levelUpSkill", id }),
+	});
+
 	const buttonsContainer = createUiButtonsContainer(
 		stats.button,
 		options.button,
 		inventory.button,
 		equipment.button,
+		skillBook.button,
 	);
-
-	const hotbar = createHotbar();
 
 	ws = createWsClient({
 		onOpen: () => {
@@ -137,8 +144,21 @@ export function startApp() {
 		sprites,
 		floatingText,
 		ws,
-		ui: { chat, stats, options, inventory, bank, equipment, hotbar },
+		ui: {
+			chat,
+			stats,
+			options,
+			inventory,
+			bank,
+			equipment,
+			hotbar,
+			skillBook,
+		},
 	};
+
+	hotbar.setSendBindHotbar((toIndex, source) =>
+		ws.send({ type: "bindHotbar", toIndex, source }),
+	);
 
 	function relayout() {
 		layoutOverlayElements(viewport, {
@@ -150,6 +170,7 @@ export function startApp() {
 			equipmentContainer: equipment.container,
 			uiButtonsContainer: buttonsContainer.container,
 			hotbarContainer: hotbar.container,
+			skillBookContainer: skillBook.container,
 		});
 	}
 

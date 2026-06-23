@@ -1,0 +1,15 @@
+{
+	"0": {
+		"id": 0,
+		"name": "Rage",
+		"type": "effect",
+		"cost": 50,
+		"cooldown": 5,
+		"flavor": "Unleash your inner anger to increase STR for a short time.",
+		"maxLevel": 10,
+		"duration": 30,
+		"target": "players",
+		"mods": { "STR": 12 },
+		"perLevel": { "STR": 2 }
+	}
+}

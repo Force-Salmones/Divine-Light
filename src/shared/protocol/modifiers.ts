@@ -23,6 +23,25 @@ export type StatId =
 	// Enemy final damage
 	| "damage";
 
+export const statIds = [
+	"STR",
+	"VIT",
+	"DEX",
+	"LUK",
+	"INT",
+	"WIS",
+	"goldPlus",
+	"experiencePlus",
+	"maxHealth",
+	"maxMana",
+	"defense",
+	"resistance",
+	"speed",
+	"attackSpeed",
+	"minDamage",
+	"maxDamage",
+];
+
 export type StatBlock = Partial<Record<StatId, number>>;
 
 export type ModifierSource = "equipment" | "skillEffect" | "useEffect";

@@ -9,6 +9,8 @@ export type EquipmentPanelUI = {
 	update: (snapshot: GameStateSnapshot | null) => void;
 };
 
+type SlotItemDragPayload = Extract<DragPayload, { type: "slotItem" }>;
+
 export function createEquipmentPanelUI(opts: {
 	onSwapItem: (a: SlotRef, b: SlotRef) => void;
 }): EquipmentPanelUI {
@@ -74,7 +76,7 @@ export function createEquipmentPanelUI(opts: {
 		}
 	}
 
-	function payloadToSlotRef(p: DragPayload): SlotRef {
+	function payloadToSlotRef(p: SlotItemDragPayload): SlotRef {
 		if (p.from === "equipment")
 			return { from: "equipment", slotKey: p.slotKey };
 		return { from: p.from, slotIndex: p.slotIndex };

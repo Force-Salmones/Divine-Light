@@ -18,7 +18,6 @@ export type ItemUseDef = ItemBaseDef & {
 	type: "use";
 	typeProps: {
 		effectId: UseEffectId;
-		//cooldown later
 	};
 };
 

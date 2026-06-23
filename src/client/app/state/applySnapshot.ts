@@ -15,6 +15,7 @@ import { isOptionsPanelVisible } from "../ui/optionsPanel.js";
 import { isStatsPanelVisible } from "../ui/statsPanel.js";
 import { isInventoryPanelVisible } from "../ui/inventoryPanel.js";
 import { isEquipmentPanelVisible } from "../ui/equipmentPanel.js";
+import { isSkillPanelVisible } from "../ui/skillPanel.js";
 
 /**
  * Apply a new snapshot from the server.
@@ -177,5 +178,10 @@ export async function applySnapshot(
 	if (isEquipmentPanelVisible(app.ui.equipment)) {
 		app.ui.equipment.update(snapshot);
 	}
+	if (isSkillPanelVisible(app.ui.skillBook)) {
+		app.ui.skillBook.update(snapshot);
+	}
 	app.ui.bank.update(snapshot);
+
+	app.ui.hotbar.update(snapshot);
 }

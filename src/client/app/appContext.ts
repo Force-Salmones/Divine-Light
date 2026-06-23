@@ -17,6 +17,7 @@ import type { InventoryPanelUI } from "./ui/inventoryPanel.js";
 import type { BankPanelUI } from "./ui/bankPanel.js";
 import type { EquipmentPanelUI } from "./ui/equipmentPanel.js";
 import type { Hotbar } from "./ui/hotbar.js";
+import type { SkillPanelUI } from "./ui/skillPanel.js";
 
 export type AppContext = {
 	/** The game canvas element. */
@@ -52,5 +53,6 @@ export type AppContext = {
 		bank: BankPanelUI;
 		equipment: EquipmentPanelUI;
 		hotbar: Hotbar;
+		skillBook: SkillPanelUI;
 	};
 };

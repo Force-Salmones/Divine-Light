@@ -177,6 +177,15 @@ export const users = pgTable("users", {
 				weapon: null,
 			}),
 		),
+	skillBook: jsonb("skill_book").notNull().default(JSON.stringify({})),
+	skillPoints: integer("skill_points").notNull().default(0),
+	hotbar: jsonb("hotbar")
+		.notNull()
+		.default(
+			JSON.stringify({
+				slots: [null, null, null, null, null, null, null, null, null],
+			}),
+		),
 	gold: bigint("gold", { mode: "number" }).notNull().default(0),
 	posX: integer("pos_x").notNull().default(600),
 	posY: integer("pos_y").notNull().default(600),

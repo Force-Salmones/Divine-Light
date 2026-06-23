@@ -14,6 +14,7 @@ export type OverlayHandles = {
 	equipmentContainer?: HTMLDivElement;
 	uiButtonsContainer?: HTMLDivElement;
 	hotbarContainer?: HTMLDivElement;
+	skillBookContainer?: HTMLDivElement;
 };
 
 /**
@@ -74,6 +75,10 @@ export function layoutOverlayElements(
 	if (handles.uiButtonsContainer) {
 		handles.uiButtonsContainer.style.right = "0px";
 		handles.uiButtonsContainer.style.bottom = `${playerPanelHeight + 20 + 100}px`;
+	}
+	if (handles.skillBookContainer) {
+		handles.skillBookContainer.style.right = `${outsideRight + 290 + 270}px`;
+		handles.skillBookContainer.style.bottom = `${panelBottom}px`;
 	}
 	if (handles.hotbarContainer) {
 		const chatWidth = 600;

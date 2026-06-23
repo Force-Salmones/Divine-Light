@@ -58,7 +58,7 @@ export function generateEquipStatMods(
 			);
 
 			newStats[newStatType] =
-				newStats[newStatType] ?? 0 + Math.round(newStatAmount);
+				(newStats[newStatType] ?? 0) + Math.round(newStatAmount);
 		}
 	}
 	return newStats;

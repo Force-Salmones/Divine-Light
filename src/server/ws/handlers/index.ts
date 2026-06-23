@@ -11,6 +11,8 @@ import { handleOpenBank } from "./openBank";
 import { handleCloseBank } from "./closeBank";
 import { handleSwapItem } from "./swapItem";
 import { handleActivate } from "./activate";
+import { handleBindHotbar } from "./bindHotbar";
+import { handleClearHotbar } from "./clearHotbar";
 
 const handlers: Record<string, (ctx: WsHandlerContext, msg: any) => void> = {
 	move: handleMove,
@@ -25,6 +27,8 @@ const handlers: Record<string, (ctx: WsHandlerContext, msg: any) => void> = {
 	openBank: handleOpenBank,
 	closeBank: handleCloseBank,
 	activate: handleActivate,
+	bindHotbar: handleBindHotbar,
+	clearHotbar: handleClearHotbar,
 };
 
 export function dispatchWsMessage(ctx: WsHandlerContext, msg: any) {

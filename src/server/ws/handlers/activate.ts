@@ -4,7 +4,13 @@ import { applyUseEffect } from "@/server/services/items/useEffects";
 import { getItemDef } from "@/server/services/items/itemRegistry";
 import { validateSlotRef } from "@/shared/protocol/helpers/validateSlotRef";
 import { calcDistance } from "@/shared/util/calcDistance";
-import { recomputePlayerStats } from "@/server/services/modifiers/recomputePlayerStats";
+import {
+	recomputePlayerStats,
+	splitPhase,
+} from "@/server/services/modifiers/recomputePlayerStats";
+import { getSkillDef } from "@/server/services/combat/skills/skillRegistry";
+import type { StatBlock, StatId } from "@/shared/protocol/modifiers";
+import { statKeys } from "@/shared/protocol/gamestate";
 
 const DEFAULT_SKILL_RANGE_PX = 100;
 
@@ -60,13 +66,15 @@ export function handleActivate(ctx: WsHandlerContext, msg: any) {
 		return;
 	} else if (source.kind === "skillId") {
 		const skillId = source.skillId;
-		if (typeof skillId !== "string") return;
-		//make skill registry later
-		if (skillId !== "rage") return;
+		if (typeof skillId !== "number") return;
 
+		const def = getSkillDef(skillId);
+		if (!def) return;
+		//only effects for now
+		if (def.type === "attack") return;
+		const skillName = def.name.toLowerCase();
 		const nowMs = Date.now();
-		//temp hardcode
-		const cooldownKey = "skill:rage";
+		const cooldownKey = `skill:${skillName}`;
 		const readyAt = player.cooldowns[cooldownKey] ?? 0;
 		if (nowMs < readyAt) return;
 
@@ -95,17 +103,28 @@ export function handleActivate(ctx: WsHandlerContext, msg: any) {
 		}
 
 		target.activeEffects = (target.activeEffects ?? []).filter(
-			//another temp hardcode
-			(e) => !(e.source === "skillEffect" && e.id === "rage"),
+			(e) => !(e.source === "skillEffect" && e.id === skillName),
 		);
+		// use player skill level later
+		const skillLevel = 1;
+
+		const statMods: StatBlock = {};
+		for (const [stat, value] of Object.entries(def.perLevel)) {
+			const statId = stat as StatId;
+			const baseValue = def.mods[statId] ?? 0;
+			const perLevelValue = value ?? 0;
+			statMods[statId] = baseValue + perLevelValue * skillLevel;
+		}
+
+		const { derived, primary } = splitPhase(statMods);
 
 		target.activeEffects.push({
-			id: "rage",
+			id: skillName,
 			source: "skillEffect",
 			startedAtMs: nowMs,
 			expiresAtMs: nowMs + 60_000,
-			primaryMods: { STR: 20 },
-			derivedMods: {},
+			primaryMods: primary,
+			derivedMods: derived,
 		});
 
 		player.cooldowns[cooldownKey] = nowMs + 5_000;

@@ -7,6 +7,7 @@ export function createUiButtonsContainer(
 	optionsButton: HTMLButtonElement,
 	inventoryButton: HTMLButtonElement,
 	equipmentButton: HTMLButtonElement,
+	skillBookButton: HTMLButtonElement,
 ): UiButtonsContainer {
 	const container = document.createElement("div");
 	container.style.position = "fixed";
@@ -18,6 +19,7 @@ export function createUiButtonsContainer(
 	container.appendChild(equipmentButton);
 	container.appendChild(statsButton);
 	container.appendChild(optionsButton);
+	container.appendChild(skillBookButton);
 
 	document.body.appendChild(container);
 
