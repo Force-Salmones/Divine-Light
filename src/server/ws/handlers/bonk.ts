@@ -3,10 +3,11 @@ import { calculateTargetDistance } from "@/game/logic/movement/calculateTargetDi
 import { sendWsToPlayer } from "../sendWsToPlayer";
 import { getPlayerFromId } from "@/server/util/getPlayerFromId";
 
-export function handleBonk(ctx: WsHandlerContext, msg: any) {
-	const { targetPlayerId } = msg as {
-		targetPlayerId?: string;
-	};
+export function handleBonk(
+	ctx: WsHandlerContext,
+	msg: { targetPlayerId: string },
+) {
+	const targetPlayerId = msg.targetPlayerId;
 	const pid = ctx.playerId;
 
 	if (typeof targetPlayerId !== "string" || !targetPlayerId) return;

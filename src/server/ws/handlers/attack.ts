@@ -4,7 +4,7 @@ import { calculateApproachCoords } from "../../../game/logic/movement/calculateA
 import { performAttack } from "../../../server/services/combat/performAttack";
 import { getPlayerFromId } from "@/server/util/getPlayerFromId";
 
-export function handleAttack(ctx: WsHandlerContext, msg: any) {
+export function handleAttack(ctx: WsHandlerContext, msg: { enemyId: number }) {
 	const { enemyId } = msg;
 	const pid = ctx.playerId;
 

@@ -6,8 +6,8 @@ import { adminChatCommands } from "@/server/chatCommands";
 import type { ChatCommandContext } from "@/server/chatCommands";
 import { getPlayerFromId } from "@/server/util/getPlayerFromId";
 
-export function handleChat(ctx: WsHandlerContext, msg: any) {
-	const { text } = msg as { text?: string };
+export function handleChat(ctx: WsHandlerContext, msg: { text: string }) {
+	const text = msg.text;
 	const pid = ctx.playerId;
 
 	if (typeof text !== "string" || !text.trim()) {

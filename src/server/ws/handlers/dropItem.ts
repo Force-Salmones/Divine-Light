@@ -2,13 +2,15 @@ import { getPlayerFromId } from "@/server/util/getPlayerFromId";
 import type { WsHandlerContext } from "./types";
 import { createGroundItem } from "@/server/services/items/createGroundItem";
 import { validateSlotRef } from "@/shared/protocol/helpers/validateSlotRef";
+import type { SlotRef } from "@/shared/protocol/ws";
+import type { Player } from "@/server/state/gameState";
 
-function getSlot(player: any, ref: any) {
+function getSlot(player: Player, ref: SlotRef) {
 	if (ref.from === "equipment") return player.equipment[ref.slotKey] ?? null;
 	return player[ref.from].slots[ref.slotIndex] ?? null;
 }
 
-function setSlot(player: any, ref: any, value: any) {
+function setSlot(player: Player, ref: SlotRef, value = null) {
 	if (ref.from === "equipment") {
 		player.equipment[ref.slotKey] = value ?? null;
 		return;
@@ -16,7 +18,7 @@ function setSlot(player: any, ref: any, value: any) {
 	player[ref.from].slots[ref.slotIndex] = value ?? null;
 }
 
-export function handleDropItem(ctx: WsHandlerContext, msg: any) {
+export function handleDropItem(ctx: WsHandlerContext, msg: { slot: SlotRef }) {
 	const player = getPlayerFromId(ctx.playerId);
 	if (!player) return;
 

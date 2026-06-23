@@ -3,8 +3,19 @@ import { serverGameState } from "@/server/state/gameState";
 import { calculateApproachCoords } from "@/game/logic/movement/calculateApproachCoords";
 import { getPlayerFromId } from "@/server/util/getPlayerFromId";
 
-export function handleMove(ctx: WsHandlerContext, msg: any) {
-	const { x, y, enemyId } = msg;
+export function handleMove(
+	ctx: WsHandlerContext,
+	msg: { x: number; y: number } | { enemyId: number },
+) {
+	let enemyId: number | null = null;
+	let x: number | null = null;
+	let y: number | null = null;
+
+	if ("enemyId" in msg) enemyId = msg.enemyId;
+	else {
+		x = msg.x;
+		y = msg.y;
+	}
 
 	const player = getPlayerFromId(ctx.playerId);
 	if (!player) return;

@@ -6,7 +6,10 @@ import { addToInventory } from "@/server/services/items/addToInventory";
 import { getItemDef } from "@/server/services/items/itemRegistry";
 import { getPlayerFromId } from "@/server/util/getPlayerFromId.js";
 
-export function handlePickupItem(ctx: WsHandlerContext, msg: any) {
+export function handlePickupItem(
+	ctx: WsHandlerContext,
+	msg: { groundItemId?: string },
+) {
 	const groundItemId = msg.groundItemId;
 	if (!groundItemId) return;
 	const foundItem = serverGameState.groundItems.get(groundItemId);
