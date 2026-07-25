@@ -9,7 +9,7 @@ export type SkillPanelUI = {
 	update: (snapshot: GameStateSnapshot | null) => void;
 };
 
-export function createSkillPanelUI(opts: {
+export function createSkillPanelUI(options: {
 	onLevelUpSkill?: (id: SkillId) => void;
 }): SkillPanelUI {
 	const button = document.createElement("button");
@@ -131,7 +131,7 @@ export function createSkillPanelUI(opts: {
 
 	levelUpButton.addEventListener("click", () => {
 		if (selectedSkillId !== null) {
-			opts.onLevelUpSkill?.(selectedSkillId);
+			options.onLevelUpSkill?.(selectedSkillId);
 		}
 	});
 
@@ -139,8 +139,6 @@ export function createSkillPanelUI(opts: {
 		index: number,
 		snapshot: GameStateSnapshot | null,
 	) {
-		const skill = snapshot ? snapshot.player.skillBook[index] : undefined;
-
 		const slot = slotEls[index]!;
 		const img = slotImgs[index]!;
 		const badge = slotBadges[index]!;

@@ -9,7 +9,7 @@ export type InventoryPanelUI = {
 	update: (snapshot: GameStateSnapshot | null) => void;
 };
 
-export function createInventoryPanelUI(opts: {
+export function createInventoryPanelUI(options: {
 	onSwapItem: (a: SlotRef, b: SlotRef) => void;
 	onActivateSlot?: (slot: SlotRef) => void;
 }): InventoryPanelUI {
@@ -97,7 +97,7 @@ export function createInventoryPanelUI(opts: {
 		slot.addEventListener("dblclick", (e) => {
 			e.preventDefault();
 			if (!slot.dataset.itemId) return;
-			opts.onActivateSlot?.({ from: "inventory", slotIndex: i });
+			options.onActivateSlot?.({ from: "inventory", slotIndex: i });
 		});
 
 		slot.addEventListener("dragstart", (e) => {
@@ -124,7 +124,11 @@ export function createInventoryPanelUI(opts: {
 			let parsed: DragPayload | null = null;
 			try {
 				parsed = JSON.parse(raw) as DragPayload;
-			} catch {}
+			} catch {
+				console.warn(
+					`Invalid drag payload in inventoryPanel.ts drop listener: ${raw}`,
+				);
+			}
 
 			if (!parsed || parsed.type !== "slotItem") {
 				return;
@@ -148,13 +152,13 @@ export function createInventoryPanelUI(opts: {
 
 				if (a.from === b.from && a.slotIndex === b.slotIndex) return;
 
-				opts.onSwapItem(a, b);
+				options.onSwapItem(a, b);
 			} else {
 				const a: SlotRef = {
 					from: "equipment",
 					slotKey: parsed.slotKey,
 				};
-				opts.onSwapItem(a, b);
+				options.onSwapItem(a, b);
 			}
 		});
 

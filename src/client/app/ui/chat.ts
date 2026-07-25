@@ -16,15 +16,12 @@ export type ChatUI = {
 	append: (msg: ChatMessage) => void;
 };
 
-export type CreateChatUIOptions = {
-	/** Called when the user submits a message (already trimmed, non-empty). */
-	onSend: (text: string) => void;
-};
-
 /**
  * Create the chat overlay and append it to the DOM.
  */
-export function createChatUI(options: CreateChatUIOptions): ChatUI {
+export function createChatUI(options: {
+	onSend: (text: string) => void;
+}): ChatUI {
 	const messages: ChatMessage[] = [];
 
 	const container = document.createElement("div");

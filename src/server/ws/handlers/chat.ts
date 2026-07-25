@@ -17,7 +17,7 @@ export function handleChat(ctx: WsHandlerContext, msg: { text: string }) {
 	const isAdminCommand = trimmed.startsWith("$");
 
 	if (isAdminCommand) {
-		//add isAdmin check
+		if (!getPlayerFromId(pid)?.isAdmin) return;
 		const withoutPrefix = trimmed.slice(1).trim();
 		const parts = withoutPrefix.split(/\s+/).filter(Boolean);
 		const commandName = parts[0];

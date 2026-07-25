@@ -12,8 +12,8 @@ export async function handlerCreateUser(req: Request, res: Response) {
 	) {
 		try {
 			const passwordHash = await hashPassword(password);
-			const newUser = await createUser(name, email, passwordHash);
-			res.json({ success: true, user: newUser });
+			await createUser(name, email, passwordHash);
+			res.json({ success: true, user: { name, email } });
 		} catch (error) {
 			console.error("Error creating user:", error);
 			res.status(500).json({

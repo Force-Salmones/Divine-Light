@@ -8,7 +8,7 @@ export type BankPanelUI = {
 	update: (snapshot: GameStateSnapshot | null) => void;
 };
 
-export function createBankPanelUi(opts: {
+export function createBankPanelUi(options: {
 	onClose: () => void;
 	onSwapItem: (a: SlotRef, b: SlotRef) => void;
 }): BankPanelUI {
@@ -51,7 +51,7 @@ export function createBankPanelUi(opts: {
 	closeButton.style.border = "1px solid rgba(255,255,255, 0.5)";
 	closeButton.style.borderRadius = "3px";
 	closeButton.addEventListener("click", () => {
-		opts.onClose();
+		options.onClose();
 	});
 
 	// offscreen drag preview canvas
@@ -115,7 +115,11 @@ export function createBankPanelUi(opts: {
 			let parsed: DragPayload | null = null;
 			try {
 				parsed = JSON.parse(raw) as DragPayload;
-			} catch {}
+			} catch {
+				console.warn(
+					`Invalid drag payload in bankPanel.ts drop listener: ${raw}`,
+				);
+			}
 
 			if (
 				!parsed ||
@@ -136,13 +140,13 @@ export function createBankPanelUi(opts: {
 
 				if (a.from === b.from && a.slotIndex === b.slotIndex) return;
 
-				opts.onSwapItem(a, b);
+				options.onSwapItem(a, b);
 			} else {
 				const a: SlotRef = {
 					from: "equipment",
 					slotKey: parsed.slotKey,
 				};
-				opts.onSwapItem(a, b);
+				options.onSwapItem(a, b);
 			}
 		});
 

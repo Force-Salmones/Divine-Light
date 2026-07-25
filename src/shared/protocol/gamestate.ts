@@ -85,6 +85,7 @@ export type PlayerPrivate = {
 	lastAttackEvent?: AttackEvent;
 	lastIncomingHit?: IncomingHit;
 	lastLevelUp?: LevelUpEvent;
+	isAdmin: boolean;
 };
 
 export type EnemyPublic = {

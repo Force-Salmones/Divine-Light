@@ -11,7 +11,7 @@ export type EquipmentPanelUI = {
 
 type SlotItemDragPayload = Extract<DragPayload, { type: "slotItem" }>;
 
-export function createEquipmentPanelUI(opts: {
+export function createEquipmentPanelUI(options: {
 	onSwapItem: (a: SlotRef, b: SlotRef) => void;
 }): EquipmentPanelUI {
 	const button = document.createElement("button");
@@ -125,7 +125,7 @@ export function createEquipmentPanelUI(opts: {
 				return;
 			}
 
-			opts.onSwapItem(a, b);
+			options.onSwapItem(a, b);
 		});
 	}
 

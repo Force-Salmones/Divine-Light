@@ -7,6 +7,7 @@ import {
 	integer,
 	jsonb,
 	bigint,
+	boolean,
 } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
@@ -189,6 +190,7 @@ export const users = pgTable("users", {
 	gold: bigint("gold", { mode: "number" }).notNull().default(0),
 	posX: integer("pos_x").notNull().default(600),
 	posY: integer("pos_y").notNull().default(600),
+	isAdmin: boolean("is_admin").default(false).notNull(),
 });
 
 export const mobs = pgTable("mobs", {

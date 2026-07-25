@@ -11,16 +11,12 @@ export type OptionsPanelUI = {
 	update: (snapshot: GameStateSnapshot | null) => void;
 };
 
-export type CreateOptionsPanelOptions = {
-	store: ClientStore;
-};
-
 /**
  * Create options panel and toggle button.
  */
-export function createOptionsPanelUI(
-	options: CreateOptionsPanelOptions,
-): OptionsPanelUI {
+export function createOptionsPanelUI(options: {
+	store: ClientStore;
+}): OptionsPanelUI {
 	const button = document.createElement("button");
 	button.textContent = "Options";
 	button.style.position = "static";

@@ -90,6 +90,7 @@ export async function loadPlayer(
 			useDerived: {},
 		},
 		cooldowns: {},
+		isAdmin: dbUser.isAdmin,
 	};
 	recomputePlayerStats(player);
 	return player;

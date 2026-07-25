@@ -1,15 +1,15 @@
 import type { SlotRef } from "../../../shared/protocol/ws.js";
 
 export function validateSlotRef(
-	ref: unknown,
+	ref: SlotRef,
 	bankOpen: boolean,
 ): SlotRef | undefined {
 	if (!ref || typeof ref !== "object") return;
 
-	const from = (ref as any).from;
+	const from = ref.from;
 
 	if (from === "inventory" || from === "bank") {
-		const slotIndex = (ref as any).slotIndex;
+		const slotIndex = ref.slotIndex;
 		if (!Number.isInteger(slotIndex)) return;
 		if (from === "bank" && !bankOpen) return;
 
@@ -20,7 +20,7 @@ export function validateSlotRef(
 	}
 
 	if (from === "equipment") {
-		const slotKey = (ref as any).slotKey;
+		const slotKey = ref.slotKey;
 		if (slotKey !== "weapon" && slotKey !== "charm") return;
 		return { from, slotKey };
 	}
