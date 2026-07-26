@@ -1,6 +1,7 @@
 import express from "express";
 import { shutdown } from "./services/shutdown";
 import { startServer } from "./init/startServer";
+import type { WsHandlerContext } from "./ws/handlers/types";
 
 export const app = express();
 
@@ -10,7 +11,7 @@ export const runtimeState = {
 };
 
 // Tracks the active WS connection per playerId (prevents two tabs controlling the same character)
-export const wsByPlayerId = new Map<string, string>();
+export const wsByPlayerId = new Map<string, WsHandlerContext>();
 
 void startServer().catch((error) => {
 	console.error("Failed to start server:", error);

@@ -7,6 +7,8 @@ import { addToInventory } from "./services/items/addToInventory";
 import { getItemDef } from "./services/items/itemRegistry";
 import { recomputePlayerStats } from "./services/modifiers/recomputePlayerStats";
 import { learnSkill } from "./services/combat/skills/learnSkill";
+import { wsByPlayerId } from ".";
+import { handleClientMessage } from "./ws/handleClientMessage";
 
 export type ChatCommandContext = {
 	playerId: string;
@@ -209,5 +211,18 @@ export const adminChatCommands: Record<string, ChatCommandHandler> = {
 			return;
 		}
 		learnSkill(foundPlayer, skillId);
+	},
+	sendWs: async ({ playerId, args, reply }) => {
+		if (args.length < 1) {
+			void reply("Usage: $sendWs <payload>");
+			return;
+		}
+		const raw = args.join(" ");
+		if (raw === undefined) return;
+
+		const ctx = wsByPlayerId.get(playerId);
+		if (!ctx) return;
+
+		handleClientMessage(ctx, raw);
 	},
 };

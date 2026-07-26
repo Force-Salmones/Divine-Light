@@ -1,15 +1,24 @@
 import { makeGameStateSnapshot } from "../snapshots/makeSnapshot";
 import { wss } from "../init/startServer";
+import { wsByPlayerId } from "..";
 
 export function broadcastGameState() {
 	if (!wss) return;
 
-	// Per-client snapshot (selfId/player/selectedEnemyId/etc differ per client)
-	wss.clients.forEach((client: any) => {
+	wss.clients.forEach((client) => {
 		try {
 			if (client.readyState !== 1) return;
-			const pid: string | undefined = client.playerId;
+
+			// Find the playerId for this WebSocket via wsByPlayerId
+			let pid: string | undefined;
+			for (const [playerId, ctx] of wsByPlayerId.entries()) {
+				if (ctx.ws === client) {
+					pid = playerId;
+					break;
+				}
+			}
 			if (!pid) return;
+
 			const snapshot = makeGameStateSnapshot(pid);
 			client.send(
 				JSON.stringify({ type: "gameState", gameState: snapshot }),

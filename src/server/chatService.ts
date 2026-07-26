@@ -1,4 +1,5 @@
 import type { WebSocket, WebSocketServer } from "ws";
+import { wsByPlayerId } from ".";
 
 let wssRef: WebSocketServer | null = null;
 
@@ -49,9 +50,9 @@ export function sendChatToPlayer(
 		timestamp: Date.now(),
 	};
 	const json = JSON.stringify(payload);
-	wssRef.clients.forEach((client: WebSocket) => {
-		if (client.readyState === 1 && client.playerId === playerId) {
-			client.send(json);
-		}
-	});
+	const ctx = wsByPlayerId.get(playerId);
+	if (!ctx) return;
+	if (ctx.ws.readyState === 1) {
+		ctx.ws.send(json);
+	}
 }

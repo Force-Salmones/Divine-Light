@@ -13,6 +13,7 @@ import { handleSwapItem } from "./swapItem";
 import { handleActivate } from "./activate";
 import { handleBindHotbar } from "./bindHotbar";
 import { handleClearHotbar } from "./clearHotbar";
+import type { ClientToServerMessage } from "@/shared/protocol/ws";
 
 const handlers: Record<string, (ctx: WsHandlerContext, msg: any) => void> = {
 	move: handleMove,
@@ -31,11 +32,11 @@ const handlers: Record<string, (ctx: WsHandlerContext, msg: any) => void> = {
 	clearHotbar: handleClearHotbar,
 };
 
-export function dispatchWsMessage(ctx: WsHandlerContext, msg: any) {
-	const type = msg?.type;
-	if (typeof type !== "string") {
-		return;
-	}
+export function dispatchWsMessage(
+	ctx: WsHandlerContext,
+	msg: ClientToServerMessage,
+) {
+	const type = msg.type;
 
 	const handler = handlers[type];
 	if (!handler) {

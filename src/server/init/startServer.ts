@@ -5,21 +5,20 @@ import { getJwtFromReq, validateJWT } from "@/auth/jwt";
 import { config } from "@/config";
 import { getUserById } from "@/db/queries/users";
 import type { Request } from "express";
-import { WebSocketServer } from "ws";
+import { WebSocket, WebSocketServer } from "ws";
 import { app, wsByPlayerId } from "..";
 import { registerHttpRoutes } from "../http/routes";
 import { initChatService } from "../chatService";
 import { startTickLoop } from "../loop/startTickLoop";
 import { persistAllPlayers, persistPlayer } from "../services/persistPlayer";
 import { initializeEnemies } from "./initializeEnemies";
-import { dispatchWsMessage } from "../ws/handlers";
-import type { WsHandlerContext } from "../ws/handlers/types";
 import { loadItemRegistry } from "../services/items/itemRegistry";
 import { loadMobRegistry } from "../services/mobs/mobsRegistry";
 import { getPlayerFromId } from "../util/getPlayerFromId";
 import { loadNpcRegistry } from "../services/npcs/npcRegistry";
 import { loadStatRollsRegistry } from "../services/items/statRollsRegistry";
 import { loadSkillRegistry } from "../services/combat/skills/skillRegistry";
+import { handleClientMessage } from "../ws/handleClientMessage";
 
 export let wss: WebSocketServer | null = null;
 export let httpServer: any = null;
@@ -50,7 +49,7 @@ export async function startServer() {
 	wss = new WebSocketServer({ server, path: "/ws" });
 	initChatService(wss);
 
-	wss.on("connection", async (ws: any, req: any) => {
+	wss.on("connection", async (ws: WebSocket, req: Request) => {
 		try {
 			// Authenticate using JWT (cookie preferred)
 			const token = getJwtFromReq(req as Request);
@@ -86,30 +85,36 @@ export async function startServer() {
 			}
 
 			// Only allow one active WS per playerId (prevents multi-tab fights over the same character)
-			const existing = wsByPlayerId.get(player.id);
+			const existing = wsByPlayerId.get(player.id)?.ws;
 			if (existing && existing !== ws) {
 				try {
 					existing.close(4000, "Logged in elsewhere");
-				} catch {}
+				} catch {
+					console.warn(
+						`Error refreshing connection for '${existing}'`,
+					);
+				}
 			}
-			wsByPlayerId.set(player.id, ws);
+			const ctx = { ws, playerId: userId };
 
-			(ws as any).playerId = player.id;
+			wsByPlayerId.set(player.id, ctx);
+
+			ctx.playerId = player.id;
 
 			// Send initial per-client snapshot
-			ws.send(
+			ctx.ws.send(
 				JSON.stringify({
 					type: "gameState",
 					gameState: makeGameStateSnapshot(player.id),
 				}),
 			);
 
-			ws.on("close", () => {
-				const pid: string | undefined = (ws as any).playerId;
+			ctx.ws.on("close", () => {
+				const pid: string | undefined = ctx.playerId;
 				if (!pid) return;
 
 				// Only clean up if THIS ws is still the active one for the playerId
-				if (wsByPlayerId.get(pid) === ws) {
+				if (wsByPlayerId.get(pid)?.ws === ctx.ws) {
 					wsByPlayerId.delete(pid);
 
 					void persistPlayer(pid);
@@ -123,20 +128,8 @@ export async function startServer() {
 				}
 			});
 
-			ws.on("message", (raw: any) => {
-				try {
-					const msg = JSON.parse(raw.toString());
-					const resolvedPlayerId = (ws as any).playerId;
-					if (!resolvedPlayerId) return;
-					const currentPlayerId: string = resolvedPlayerId;
-					const ctx: WsHandlerContext = {
-						ws: ws,
-						playerId: currentPlayerId,
-					};
-					dispatchWsMessage(ctx, msg);
-				} catch (err) {
-					console.error("WS message error:", err);
-				}
+			ctx.ws.on("message", (raw: unknown) => {
+				void handleClientMessage(ctx, raw);
 			});
 		} catch (err) {
 			console.error("WS connection error:", err);
