@@ -1,4 +1,5 @@
 import type {
+	EnemyPublic,
 	GameStateSnapshot,
 	PlayerPublic,
 } from "@/shared/protocol/gamestate";
@@ -6,6 +7,7 @@ import { serverGameState } from "../state/gameState";
 import { playerToPublic } from "./playerToPublic";
 import { getPlayerFromId } from "../util/getPlayerFromId";
 import { getNpcReg } from "../services/npcs/npcRegistry";
+import { enemyToPublic } from "./enemyToPublic";
 
 /**
  * Builds a per-player snapshot from the authoritative server state.
@@ -20,11 +22,17 @@ export function makeGameStateSnapshot(playerId: string): GameStateSnapshot {
 
 	const players: Record<string, PlayerPublic> = {};
 
+	const enemies: EnemyPublic[] = [];
+
 	for (const player in serverGameState.players) {
 		if (!serverGameState.players[player]) {
 			continue;
 		}
 		players[player] = playerToPublic(serverGameState.players[player]);
+	}
+
+	for (const enemy of serverGameState.enemies) {
+		enemies.push(enemyToPublic(enemy));
 	}
 
 	const npcReg = getNpcReg();
